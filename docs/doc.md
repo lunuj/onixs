@@ -33,3 +33,4 @@ dd if=boot.bin of=master.img bs=512 count=1 conv=notruncs
 ## 全局描述符
 ## 全局描述符表
 ## A20线
+# 整理项目目录
