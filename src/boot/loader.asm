@@ -107,10 +107,134 @@ protect_mode:
 
     mov esp, 0x10000
 
-    mov byte [0xb8000], 'P'
-    mov byte [0x200000], 'P'
-    xchg bx, bx
-    jmp $
+    mov edi, 0x10000
+    mov ecx, 10
+    mov bl, 200
+
+    call read_disk
+    jmp dword code_selector:0x10000
+
+    ud2
+
+read_disk:
+    ; 设置读写扇区数量
+    mov dx, 0x1f2
+    mov al, bl
+    out dx, al
+
+    inc dx; 0x1f3 
+    mov al, cl; 起始扇区0~7位
+    out dx, al
+
+    inc dx; 0x1f4
+    shr ecx, 8; 起始扇区8~15位
+    mov al, cl
+    out dx, al
+
+    inc dx; 0x1f5 
+    shr ecx, 8; 起始扇区16~23位
+    mov al, cl
+    out dx, al
+    
+    inc dx; 0x1f6
+    shr ecx, 8; 起始扇区23~27位
+    and cl, 0b1111
+
+    mov al, 0b1110_0000
+    or al, cl
+    out dx, al
+
+    inc dx; 0x1f7
+    mov al, 0x20
+    out dx, al
+    xor ecx, ecx
+    mov cl, bl
+    .read_block:
+        push cx
+        call .wait_data
+        call .read_sector
+        pop cx
+        loop .read_block
+    ret
+    .wait_data:
+        mov dx, 0x1f7
+        .wait_check:
+            in al, dx
+            jmp $+2
+            and al, 0b1000_1000
+            cmp al, 0b0000_1000
+            jnz .wait_check
+        ret
+    .read_sector:
+        mov dx, 0x1f0
+        mov cx, 256
+        .read_byte:
+            in ax, dx
+            jmp $+2
+            mov [edi], ax
+            add edi, 2
+            loop .read_byte
+        ret
+
+write_disk:
+    ; 设置读写扇区数量
+    mov dx, 0x1f2
+    mov al, bl
+    out dx, al
+
+    inc dx; 0x1f3 
+    mov al, cl; 起始扇区0~7位
+    out dx, al
+
+    inc dx; 0x1f4
+    shr ecx, 8; 起始扇区8~15位
+    mov al, cl
+    out dx, al
+
+    inc dx; 0x1f5 
+    shr ecx, 8; 起始扇区16~23位
+    mov al, cl
+    out dx, al
+    
+    inc dx; 0x1f6
+    shr ecx, 8; 起始扇区23~27位
+    and cl, 0b1111
+
+    mov al, 0b1110_0000
+    or al, cl
+    out dx, al
+
+    inc dx; 0x1f7
+    mov al, 0x30
+    out dx, al
+    xor ecx, ecx
+    mov cl, bl
+    .write_block:
+        push cx
+        call .write_sector
+        call .wait_data
+        pop cx
+        loop .write_block
+    ret
+    .wait_data:
+        mov dx, 0x1f7
+        .wait_check:
+            in al, dx
+            jmp $+2
+            and al, 0b1000_1000
+            cmp al, 0b0000_1000
+            jnz .wait_check
+        ret
+    .write_sector:
+        mov dx, 0x1f0
+        mov cx, 256
+        .write_byte:
+            mov ax, [edi]
+            out dx, ax
+            jmp $+2
+            add edi, 2
+            loop .write_byte
+        ret
 
 ards_count:
     dw 0
