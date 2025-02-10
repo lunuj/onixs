@@ -2,36 +2,57 @@ DIR_BUILD 	:= ../../build
 DIR_SRC		:= ../../src
 DIR_PWD		:= kernel
 
-SRC		:= start.asm
-OBJ		:= $(patsubst %.asm,$(DIR_BUILD)/$(DIR_PWD)/%.o,$(notdir $(SRC)))
-BIN		:= $(patsubst %.asm,$(DIR_BUILD)/$(DIR_PWD)/%.bin,$(notdir $(SRC)))
+SRC_ASM	:= start.asm
+OBJ_ASM	:= $(patsubst %.asm,$(DIR_BUILD)/$(DIR_PWD)/%.o,$(notdir $(SRC_ASM)))
+BIN_ASM	:= $(patsubst %.asm,$(DIR_BUILD)/$(DIR_PWD)/%.bin,$(notdir $(SRC_ASM)))
+
+SRC_C	:= main.c
+OBJ_C	:= $(patsubst %.c,$(DIR_BUILD)/$(DIR_PWD)/%.o,$(notdir $(SRC_C)))
+BIN_C	:= $(patsubst %.c,$(DIR_BUILD)/$(DIR_PWD)/%.bin,$(notdir $(SRC_C)))
+
 IMG		:= $(DIR_BUILD)/master.img
 KERNEL	:= $(DIR_BUILD)/kernel.bin
 SYSTEM	:= $(DIR_BUILD)/system.bin
 SYSTEM_MAP	:= $(DIR_BUILD)/system.map
 
-ENTRY_POINT	:= 0x10000
+CROSS_COMPILE	:= x86_64-elf-
+CC		:= $(CROSS_COMPILE)gcc
+LD		:= $(CROSS_COMPILE)ld
+OBJCOPY := $(CROSS_COMPILE)objcopy
+NM		:= $(CROSS_COMPILE)nm
 
+CFLAGS	:= -m32 -e kernel_init
+CFLAGS	+= -nostartfiles -nostdlib -nostdinc
+CFLAGS	+= -fno-builtin -fno-pic -fno-pie -fno-stack-protector
+LDFLAGS := -m elf_i386 -static
+
+DEBUG	:= -g
+INCLUDE	:= -I./include
+
+ENTRY_POINT	:= 0x10000
 img: $(IMG)
 
-$(OBJ): $(DIR_BUILD)/$(DIR_PWD)/%.o: $(DIR_SRC)/$(DIR_PWD)/%.asm
+$(OBJ_ASM): $(DIR_BUILD)/$(DIR_PWD)/%.o: $(DIR_SRC)/$(DIR_PWD)/%.asm
 	$(shell mkdir -p $(dir $@))
-	nasm -f elf32 $< -o $@
+	nasm -f elf32 $(DEBUG) $< -o $@
 
-$(KERNEL): $(OBJ)
+$(OBJ_C): $(DIR_BUILD)/$(DIR_PWD)/%.o: $(DIR_SRC)/$(DIR_PWD)/%.c
 	$(shell mkdir -p $(dir $@))
-	cp $(OBJ) $(KERNEL)
-#	ld -arch i386 -static $^ -o $@
+	$(CC) $(CFLAGS) $(DEBUG) $(INCLUDE) -c $< -o $@ 
+
+$(KERNEL): $(OBJ_ASM) $(OBJ_C)
+	$(shell mkdir -p $(dir $@))
+	$(LD) $(LDFLAGS) $^ -o $@  -Ttext $(ENTRY_POINT)
 
 $(SYSTEM): $(KERNEL)
 	$(shell mkdir -p $(dir $@))
-	objcopy -O binary $< $@
+	$(OBJCOPY) -O binary $< $@
 	
-$(SYSTEM_MAP): $(SYSTEM)
+$(SYSTEM_MAP): $(KERNEL)
 	$(shell mkdir -p $(dir $@))
-	nm $< | sort > $@
+	$(NM) $< | sort > $@
 
-$(IMG): $(SYSTEM)
+$(IMG): $(SYSTEM) $(SYSTEM_MAP)
 ifneq ($(wildcard $(IMG)),)
 else
 	yes | bximage -q -hd=16 -func=create -sectsize=512 -imgmode=flat $@
@@ -40,4 +61,5 @@ endif
 
 .PHONY: clean
 clean:
-	rm -rf $(OBJ)
+	rm -rf $(OBJ_ASM)
+	rm -rf $(OBJ_C)
