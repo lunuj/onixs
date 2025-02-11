@@ -10,5 +10,4 @@ void kernel_init(){
     {
         video[i*2] = message[i];
     }
-    
 }
