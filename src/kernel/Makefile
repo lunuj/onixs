@@ -2,11 +2,15 @@ DIR_BUILD 	:= ../../build
 DIR_SRC		:= ../../src
 DIR_PWD		:= kernel
 
-SRC_ASM	:= start.asm
+SRC_ASM	:= start.asm\
+			io.asm
 OBJ_ASM	:= $(patsubst %.asm,$(DIR_BUILD)/$(DIR_PWD)/%.o,$(notdir $(SRC_ASM)))
 BIN_ASM	:= $(patsubst %.asm,$(DIR_BUILD)/$(DIR_PWD)/%.bin,$(notdir $(SRC_ASM)))
 
-SRC_C	:= main.c
+SRC_C	:= main.c\
+			string.c\
+			console.c
+
 OBJ_C	:= $(patsubst %.c,$(DIR_BUILD)/$(DIR_PWD)/%.o,$(notdir $(SRC_C)))
 BIN_C	:= $(patsubst %.c,$(DIR_BUILD)/$(DIR_PWD)/%.bin,$(notdir $(SRC_C)))
 

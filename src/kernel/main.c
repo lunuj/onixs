@@ -1,13 +1,13 @@
 #include <onixs/onixs.h>
+#include <onixs/types.h>
+#include <onixs/io.h>
+#include <onixs/console.h>
 
-int magic = ONIXS_MAGIC;
-char message[] = "hello Onixs!";
-char buf[1024];
+char message[] = "hello world\n";
 
 void kernel_init(){
-    char * video = (char *)0xb8000;
-    for (int i = 0; i < sizeof(message); i++)
-    {
-        video[i*2] = message[i];
+    console_clear();
+    while(1){
+        console_write(message, sizeof(message) - 1);
     }
 }
