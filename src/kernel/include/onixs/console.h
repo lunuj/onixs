@@ -19,6 +19,7 @@
 #define HEIGHT 25                     // 屏幕文本行数
 #define ROW_SIZE (WIDTH * 2)          // 每行字节数
 #define SCR_SIZE (ROW_SIZE * HEIGHT)  // 屏幕字节数
+#define PAGE_SIZE (0x410 * 2)
 
 #define NUL 0x00
 #define ENQ 0x05
@@ -32,8 +33,12 @@
 #define CR 0x0D  // \r
 #define DEL 0x7F
 
+#define CRT_BLOCK 0x3520
+#define CRT_ATTR 0x07
+
 void console_init();
 void console_write(char * buf, uint32 count);
+void console_clearline();
 void console_clear();
 
 #endif // CONSLOE_H

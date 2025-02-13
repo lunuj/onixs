@@ -5,8 +5,6 @@
 static uint32 screen;
 static uint32 cursor;
 static uint32 x, y;
-static uint8 attr = 7;
-static uint16 erase = 0x0720;
 
 static void get_screen(){
     outb(CRT_ADDR_REG, CRT_START_ADDR_H);
@@ -45,18 +43,16 @@ static void set_cursor(){
 }
 
 static void scroll_up(uint16 num){
-    if(cursor*2 + ROW_SIZE < MEM_SIZE){
-        screen += WIDTH;
-        cursor += WIDTH;
-        uint16 * ptr = MEM_BASE_PTR;
-        for (uint8 i = 0; i < WIDTH; i++)
-        {
-            *(ptr+ i + cursor) = 0x3520;
-        }
+    if(PAGE_SIZE*2 + screen * 2 + ROW_SIZE < MEM_SIZE){
+        memcpy(MEM_BASE_PTR + PAGE_SIZE*2 + screen * 2, MEM_BASE_PTR + screen*2 + ROW_SIZE, SCR_SIZE - ROW_SIZE);
+        screen += PAGE_SIZE;
+        cursor += PAGE_SIZE;
+        console_clearline();
     }else{
-        memcpy(MEM_BASE_PTR, MEM_BASE_PTR + screen*2, SCR_SIZE);
+        memcpy(MEM_BASE_PTR, MEM_BASE_PTR + screen*2 + ROW_SIZE, SCR_SIZE - ROW_SIZE);
         cursor -= screen;
         screen = 0;
+        console_clearline();
     }
     set_screen();
     set_cursor();
@@ -66,14 +62,14 @@ static void command_bs(){
     if(x){
         uint16 * ptr = MEM_BASE_PTR;
         cursor--;
-        *(ptr + cursor) = 0x0720;
+        *(ptr + cursor) = CRT_BLOCK;
         set_cursor();
     }
 }
 
 static void command_del(){
     uint16 * ptr = MEM_BASE_PTR;
-    *(ptr + cursor) = 0x3020;
+    *(ptr + cursor) = CRT_BLOCK;
 }
 
 static void command_cr(){
@@ -122,11 +118,19 @@ void console_write(char *buf, uint32 count)
             command_lf();
             break;
         default:
-            *(ptr + cursor) = (attr<<8) | ch;
+            *(ptr + cursor) = (CRT_ATTR<<8) | ch;
             cursor++;
             set_cursor();
             break;
         }
+    }
+}
+
+void console_clearline(){
+    uint16 * ptr = MEM_BASE_PTR;
+    for (uint8 i = 0; i < WIDTH; i++)
+    {
+        *(ptr+ i + cursor) = CRT_BLOCK;
     }
 }
 
@@ -140,6 +144,6 @@ void console_clear()
     uint16 * ptr = MEM_BASE_PTR;
     while ((uint32)ptr < MEM_END)
     {
-        *ptr++ = 0x0720;
+        *ptr++ = CRT_BLOCK & 0x00FF | (CRT_ATTR << 8);
     }
 }
