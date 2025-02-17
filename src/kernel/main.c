@@ -2,12 +2,12 @@
 #include <onixs/types.h>
 #include <onixs/io.h>
 #include <onixs/console.h>
-
-char message[] = "hello world\n";
+#include <onixs/string.h>
+#include <onixs/stdio.h>
 
 void kernel_init(){
     console_clear();
     while(1){
-        console_write(message, sizeof(message) - 1);
+        printk("Hello world Onixs!\r\n");
     }
 }

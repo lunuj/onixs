@@ -105,6 +105,73 @@ char *strrchr(const char *str, int ch)
     }
 }
 
+int atoi(const char *s){
+    int i = 0;
+    while (is_digit(*s))
+        i = i * 10 + *(s++) - '0';
+    return i;
+}
+
+char * number(char *str, uint32 num, int base, int size, int precision, int flags){
+    char tmp[35], index = 0, little_pos, pad ,left;
+    const char *digits = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+    if (base < 2 || base > 36)
+        return 0;
+    pad = (flags & ZEROPAD) ? '0' : ' ';
+    if (flags & SMALL)
+        digits = "0123456789abcdefghijklmnopqrstuvwxyz";
+    if(flags & SIGN && num<0){
+        *str++ = '-';
+        num=-num;
+    }else if(flags & PLUS){
+        *str++ = '+';
+    }
+
+    memset(tmp, pad, 35);
+    while(num){
+        tmp[33 - index++] = digits[num%base];
+        num/=base;
+    }
+    size = size > 0 ? size:index;
+    if(precision < index){
+        if(precision < 0){
+            precision = index;
+        }else{
+            index = precision;
+        }
+    }
+    memset(tmp, pad, 34 - index);
+    if(flags&SPECIAL){
+        switch (base)
+        {
+        case 2:
+            tmp[33 - index++] = digits[11];
+            tmp[33 - index++] = '0';
+            break;
+        case 8:
+            tmp[33 - index++] = '0';
+            break;
+        case 16:
+            tmp[33 - index++] = digits[33];
+            tmp[33 - index++] = '0';
+            break;
+        default:
+            break;
+        }
+    }
+
+    if(index < size){
+        left = (flags&LEFT) ? index:size;
+    }else{
+        left = size;
+    }
+    tmp[34] = '\0';
+    for(int i = 0; i < left; i++){
+        *str++ = tmp[34 - left + i];
+    }
+    return str;
+}
+
 int memcmp(const void *lhs, const void *rhs, size_t count)
 {
     char *lptr = (char *)lhs;
