@@ -12,7 +12,9 @@ SRC_C	:= main.c\
 			console.c\
 			printk.c\
 			vsprintf.c\
-
+			assert.c\
+			debug.c\
+			
 OBJ_C	:= $(patsubst %.c,$(DIR_BUILD)/$(DIR_PWD)/%.o,$(notdir $(SRC_C)))
 BIN_C	:= $(patsubst %.c,$(DIR_BUILD)/$(DIR_PWD)/%.bin,$(notdir $(SRC_C)))
 

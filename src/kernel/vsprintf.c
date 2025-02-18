@@ -1,6 +1,6 @@
 #include <onixs/stdarg.h>
 #include <onixs/string.h>
-
+#include <onixs/assert.h>
 
 int vsprintf(char *buf, const char *fmt, va_list args){
     char *str;
@@ -131,7 +131,9 @@ int vsprintf(char *buf, const char *fmt, va_list args){
         }
     }
     *str = '\0';
-    return str - buf;
+    int i = str - buf;
+    assert(i < 1024);
+    return i;
 }
 
 int sprintf(char *buf, const char *fmt, ...){
