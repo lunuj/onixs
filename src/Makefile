@@ -14,10 +14,12 @@ vmdk: $(VMDK)
 $(IMG):
 ifneq ($(wildcard $(IMG)),)
 else
-	yes | bximage -q -hd=16 -func=create -sectsize=512 -imgmode=flat $@
+# yes | bximage -q -hd=16 -func=create -sectsize=512 -imgmode=flat $@
+	$(shell mkdir -p $(dir $@))
+	yes |qemu-img create -f raw $@ 512K
 endif
-	make -C $(DIR_BOOT)
-	make -C $(DIR_KERNEL)
+	make -C $(DIR_BOOT) img
+	make -C $(DIR_KERNEL) img
 
 $(VMDK): $(IMG)
 	qemu-img convert -pO vmdk $< $@

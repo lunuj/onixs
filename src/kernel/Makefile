@@ -4,7 +4,9 @@ DIR_PWD		:= kernel
 
 SRC_ASM	:= start.asm\
 			io.asm\
-			schedule.asm
+			schedule.asm\
+			handler.asm\
+			
 OBJ_ASM	:= $(patsubst %.asm,$(DIR_BUILD)/$(DIR_PWD)/%.o,$(notdir $(SRC_ASM)))
 BIN_ASM	:= $(patsubst %.asm,$(DIR_BUILD)/$(DIR_PWD)/%.bin,$(notdir $(SRC_ASM)))
 
@@ -17,6 +19,7 @@ SRC_C	:= main.c\
 			debug.c\
 			global.c\
 			task.c\
+			interrupt.c\
 			
 OBJ_C	:= $(patsubst %.c,$(DIR_BUILD)/$(DIR_PWD)/%.o,$(notdir $(SRC_C)))
 BIN_C	:= $(patsubst %.c,$(DIR_BUILD)/$(DIR_PWD)/%.bin,$(notdir $(SRC_C)))
@@ -41,7 +44,8 @@ DEBUG	:= -g
 INCLUDE	:= -I./include
 
 ENTRY_POINT	:= 0x10000
-img: $(IMG)
+img: $(IMG) $(SYSTEM) $(SYSTEM_MAP)
+	dd if=$(SYSTEM) of=$(IMG) bs=512 count=200 seek=10 conv=notrunc
 
 $(OBJ_ASM): $(DIR_BUILD)/$(DIR_PWD)/%.o: $(DIR_SRC)/$(DIR_PWD)/%.asm
 	$(shell mkdir -p $(dir $@))
@@ -63,14 +67,7 @@ $(SYSTEM_MAP): $(KERNEL)
 	$(shell mkdir -p $(dir $@))
 	$(NM) $< | sort > $@
 
-$(IMG): $(SYSTEM) $(SYSTEM_MAP)
-ifneq ($(wildcard $(IMG)),)
-else
-	yes | bximage -q -hd=16 -func=create -sectsize=512 -imgmode=flat $@
-endif
-	dd if=$(SYSTEM) of=$@ bs=512 count=200 seek=10 conv=notrunc
-
-.PHONY: clean
+.PHONY: clean img
 clean:
 	rm -rf $(OBJ_ASM)
 	rm -rf $(OBJ_C)

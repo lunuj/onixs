@@ -8,12 +8,11 @@
 #include <onixs/debug.h>
 #include <onixs/global.h>
 #include <onixs/task.h>
+#include <onixs/interrupt.h>
 
 void kernel_init(){
     console_clear();
     gdt_init();
-    task_init();
-    while(1){
-        printk("Hello world Onixs!\r\n");
-    }
+    interrupt_init();
+    printk("Hello world Onixs!\r\n");
 }
