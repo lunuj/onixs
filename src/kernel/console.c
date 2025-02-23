@@ -119,8 +119,13 @@ void console_write(char *buf, uint32 count)
             break;
         default:
             *(ptr + cursor) = (CRT_ATTR<<8) | ch;
-            cursor++;
-            set_cursor();
+            if(cursor - screen == 80*25 - 1){
+                command_cr();
+                command_lf();
+            }else{
+                cursor++;
+                set_cursor();
+            }
             break;
         }
     }

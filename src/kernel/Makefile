@@ -3,7 +3,8 @@ DIR_SRC		:= ../../src
 DIR_PWD		:= kernel
 
 SRC_ASM	:= start.asm\
-			io.asm
+			io.asm\
+			schedule.asm
 OBJ_ASM	:= $(patsubst %.asm,$(DIR_BUILD)/$(DIR_PWD)/%.o,$(notdir $(SRC_ASM)))
 BIN_ASM	:= $(patsubst %.asm,$(DIR_BUILD)/$(DIR_PWD)/%.bin,$(notdir $(SRC_ASM)))
 
@@ -15,6 +16,7 @@ SRC_C	:= main.c\
 			assert.c\
 			debug.c\
 			global.c\
+			task.c\
 			
 OBJ_C	:= $(patsubst %.c,$(DIR_BUILD)/$(DIR_PWD)/%.o,$(notdir $(SRC_C)))
 BIN_C	:= $(patsubst %.c,$(DIR_BUILD)/$(DIR_PWD)/%.bin,$(notdir $(SRC_C)))
