@@ -105,10 +105,10 @@ char *strrchr(const char *str, int ch)
     }
 }
 
-int atoi(const char *s){
+int skip_atoi(const char **s){
     int i = 0;
-    while (is_digit(*s))
-        i = i * 10 + *(s++) - '0';
+    while (is_digit(**s))
+        i = i * 10 + *((*s)++) - '0';
     return i;
 }
 
@@ -132,6 +132,7 @@ char * number(char *str, uint32 num, int base, int size, int precision, int flag
         tmp[33 - index++] = digits[num%base];
         num/=base;
     }
+
     size = size > 0 ? size:index;
     if(precision < index){
         if(precision < 0){
@@ -145,15 +146,15 @@ char * number(char *str, uint32 num, int base, int size, int precision, int flag
         switch (base)
         {
         case 2:
-            tmp[33 - index++] = digits[11];
-            tmp[33 - index++] = '0';
+            tmp[33 - size++] = digits[11];
+            tmp[33 - size++] = '0';
             break;
         case 8:
-            tmp[33 - index++] = '0';
+            tmp[33 - size++] = '0';
             break;
         case 16:
-            tmp[33 - index++] = digits[33];
-            tmp[33 - index++] = '0';
+            tmp[33 - size++] = digits[33];
+            tmp[33 - size++] = '0';
             break;
         default:
             break;

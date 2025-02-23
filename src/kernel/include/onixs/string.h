@@ -24,7 +24,7 @@ char *strrchr(const char *str, int ch);
 char *strsep(const char *str);
 char *strrsep(const char *str);
 
-int atoi(const char *s);
+int skip_atoi(const char **s);
 char * number(char *str, uint32 num, int base, int size, int precision, int flags);
 
 int memcmp(const void *lhs, const void *rhs, size_t count);

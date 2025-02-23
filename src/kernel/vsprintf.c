@@ -37,7 +37,7 @@ int vsprintf(char *buf, const char *fmt, va_list args){
 
         field_width = -1;
         if(is_digit(*fmt)){
-            field_width = atoi(fmt);
+            field_width = skip_atoi(&fmt);
         }
         else if(*fmt == '*'){
             ++fmt;
@@ -52,7 +52,7 @@ int vsprintf(char *buf, const char *fmt, va_list args){
         if(*fmt == '.'){
             ++fmt;
             if(is_digit(*fmt)){
-                precision = atoi(fmt);
+                precision = skip_atoi(&fmt);
             }
             else if(*fmt == '*'){
                 precision = va_arg(args, int);
