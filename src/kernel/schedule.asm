@@ -4,7 +4,7 @@ task_switch:
     mov ebp, esp
 
     push ebx
-        push esi
+    push esi
     push edi
 
     mov eax,esp

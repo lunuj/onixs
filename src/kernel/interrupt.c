@@ -2,6 +2,7 @@
 #include <onixs/global.h>
 #include <onixs/debug.h>
 #include <onixs/stdio.h>
+#include <onixs/stdlib.h>
 #include <onixs/io.h>
 
 gate_t idt[IDT_SIZE];
@@ -9,6 +10,8 @@ pointer_t idt_ptr;
 
 handler_t handler_table[IDT_SIZE];
 extern handler_t handler_entry_table[ENTRY_SIZE];
+
+extern void schedule();
 
 static char *messages[] = {
     "#DE Divide Error\0",
@@ -49,7 +52,12 @@ void send_eoi(int vector)
     }
 }
 
-void exception_handler(int vector)
+void exception_handler(
+    int vector,
+    uint32 edi, uint32 esi, uint32 ebp, uint32 esp,
+    uint32 ebx, uint32 edx, uint32 ecx, uint32 eax,
+    uint32 gs, uint32 fs, uint32 es, uint32 ds,
+    uint32 vector0, uint32 error, uint32 eip, uint32 cs, uint32 eflags)
 {
     char *message = NULL;
     if (vector < 22)
@@ -60,15 +68,21 @@ void exception_handler(int vector)
     {
         message = messages[15];
     }
-    printk("[ERROR]: [%#02X] %s \n", vector, messages[vector]);
+    printk("Exception : [0x%02X] %s \n", vector, messages[vector]);
+    printk("\nEXCEPTION : %s \n", messages[vector]);
+    printk("   VECTOR : 0x%02X\n", vector);
+    printk("    ERROR : 0x%08X\n", error);
+    printk("   EFLAGS : 0x%08X\n", eflags);
+    printk("       CS : 0x%02X\n", cs);
+    printk("      EIP : 0x%08X\n", eip);
+    printk("      ESP : 0x%08X\n", esp);
     // 阻塞
-    while (true)
-        ;
+    hang(true);
 }
 
 void default_handler(int vector){
     send_eoi(vector);
-    LOGK("[IRQ: %02X] default interrupt", vector);
+    schedule();
 }
 
 void pic_init(){

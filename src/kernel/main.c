@@ -15,11 +15,7 @@ void kernel_init(){
     console_clear();
     gdt_init();
     interrupt_init();
-    printk("Hello world Onixs!\r\n");
-    asm volatile("sti\n");
-    uint32 count = 0;
-    while(1){
-        DEBUGK("loop count = %d", count++);
-        delay(100000000);
-    }
+    // asm volatile("sti\n");
+    task_init();
+    // hang(true);
 }

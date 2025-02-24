@@ -14,7 +14,23 @@ interrupt_handler_%1:
 
 interrupt_entry:
     mov eax, [esp]
+    ; 保存上文寄存器信息
+    push ds
+    push es
+    push fs
+    push gs
+    pusha
+    push eax
+
     call [handler_table + eax * 4]
+    add esp, 4
+
+    ; 恢复下文寄存器信息
+    popa
+    pop gs
+    pop fs
+    pop es
+    pop ds
     add esp, 8
     iret
 

@@ -1,5 +1,6 @@
 #include <onixs/stdio.h>
 #include <onixs/debug.h>
+#include <onixs/types.h>
 #include <onixs/task.h>
 
 #define PAGE_SIZE 0x1000
@@ -21,17 +22,17 @@ void schedule(){
     task_switch(next);
 }
 
-uint32 thread_a(){
+uint32 _ofp thread_a(){
+    asm volatile("sti\n");
     while(1){
         printk("A");
-        schedule();
     }
 }
 
-uint32 thread_b(){
+uint32 _ofp thread_b(){
+    asm volatile("sti\n");
     while(1){
         printk("B");
-        schedule();
     }
 }
 
