@@ -2,6 +2,7 @@
 #include <onixs/global.h>
 #include <onixs/debug.h>
 #include <onixs/stdio.h>
+#include <onixs/io.h>
 
 gate_t idt[IDT_SIZE];
 pointer_t idt_ptr;
@@ -34,6 +35,20 @@ static char *messages[] = {
     "#CP Control Protection Exception\0",
 };
 
+// 通知中断控制器，中断处理结束
+void send_eoi(int vector)
+{
+    if (vector >= 0x20 && vector < 0x28)
+    {
+        outb(PIC_M_CTRL, PIC_EOI);
+    }
+    if (vector >= 0x28 && vector < 0x30)
+    {
+        outb(PIC_M_CTRL, PIC_EOI);
+        outb(PIC_S_CTRL, PIC_EOI);
+    }
+}
+
 void exception_handler(int vector)
 {
     char *message = NULL;
@@ -51,7 +66,27 @@ void exception_handler(int vector)
         ;
 }
 
-void interrupt_init(){
+void default_handler(int vector){
+    send_eoi(vector);
+    LOGK("[IRQ: %02X] default interrupt", vector);
+}
+
+void pic_init(){
+    outb(PIC_M_CTRL, 0b00010001); // ICW1: 边沿触发, 级联 8259, 需要ICW4.
+    outb(PIC_M_DATA, 0x20);       // ICW2: 起始端口号 0x20
+    outb(PIC_M_DATA, 0b00000100); // ICW3: IR2接从片.
+    outb(PIC_M_DATA, 0b00000001); // ICW4: 8086模式, 正常EOI
+
+    outb(PIC_S_CTRL, 0b00010001); // ICW1: 边沿触发, 级联 8259, 需要ICW4.
+    outb(PIC_S_DATA, 0x28);       // ICW2: 起始端口号 0x28
+    outb(PIC_S_DATA, 2);          // ICW3: 设置从片连接到主片的 IR2 引脚
+    outb(PIC_S_DATA, 0b00000001); // ICW4: 8086模式, 正常EOI
+
+    outb(PIC_M_DATA, 0b11111110); // 关闭所有中断
+    outb(PIC_S_DATA, 0b11111111); // 关闭所有中断
+}
+
+void idt_init(){
     //初始化异常处理函数
     for(int i = 0; i < ENTRY_SIZE; i++){
         gate_t *gate = &idt[i];
@@ -66,11 +101,20 @@ void interrupt_init(){
         gate->present = 1;
     }
 
-    for(int size = 0; size < ENTRY_SIZE; size++){
+    for(int size = 0; size < 0x20; size++){
         handler_table[size] = exception_handler;
+    }
+
+    for(int size = 0x20; size < ENTRY_SIZE; size++){
+        handler_table[size] = default_handler;
     }
     
     idt_ptr.base = (uint32)idt;
     idt_ptr.limit = sizeof(idt) - 1;
     asm volatile("lidt idt_ptr\n");
+}
+
+void interrupt_init(){
+    pic_init();
+    idt_init();
 }
