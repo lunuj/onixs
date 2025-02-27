@@ -10,12 +10,16 @@
 #include <onixs/task.h>
 #include <onixs/interrupt.h>
 #include <onixs/stdlib.h>
+#include <onixs/clock.h>
 
 void kernel_init(){
     console_clear();
     gdt_init();
     interrupt_init();
-    // asm volatile("sti\n");
-    task_init();
-    // hang(true);
+    pit_init();
+    clock_init();
+
+    asm volatile("sti\n");
+    // task_init();
+    hang(true);
 }

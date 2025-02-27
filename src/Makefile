@@ -4,11 +4,15 @@ DIR_BOOT	:= ./boot
 DIR_KERNEL	:= ./kernel
 IMG		:= $(DIR_BUILD)/master.img
 VMDK	:= $(DIR_BUILD)/master.vmdk
+QEMUFLAG:= -m 32M\
+			-boot c\
+			-audiodev dbus,id=hda \
+			-machine pcspk-audiodev=hda \
 
 qemu: $(IMG)
-	qemu-system-i386 -m 32M -boot c -hda $<
+	qemu-system-i386 $(QEMUFLAG)
 qemu-g: $(IMG)
-	qemu-system-i386 -s -S -m 32M -boot c -hda $<
+	qemu-system-i386 -s -S $(QEMUFLAG) -drive file=$<,if=ide,index=0,media=disk,format=raw
 vmdk: $(VMDK)
 
 $(IMG):

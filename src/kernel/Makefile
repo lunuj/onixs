@@ -21,6 +21,7 @@ SRC_C	:= main.c\
 			task.c\
 			interrupt.c\
 			stdlib.c\
+			clock.c\
 			
 OBJ_C	:= $(patsubst %.c,$(DIR_BUILD)/$(DIR_PWD)/%.o,$(notdir $(SRC_C)))
 BIN_C	:= $(patsubst %.c,$(DIR_BUILD)/$(DIR_PWD)/%.bin,$(notdir $(SRC_C)))
