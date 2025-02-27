@@ -3,6 +3,7 @@
 #include <onixs/debug.h>
 #include <onixs/stdio.h>
 #include <onixs/stdlib.h>
+#include <onixs/assert.h>
 #include <onixs/io.h>
 
 gate_t idt[IDT_SIZE];
@@ -10,8 +11,6 @@ pointer_t idt_ptr;
 
 handler_t handler_table[IDT_SIZE];
 extern handler_t handler_entry_table[ENTRY_SIZE];
-
-extern void schedule();
 
 static char *messages[] = {
     "#DE Divide Error\0",
@@ -37,6 +36,34 @@ static char *messages[] = {
     "#VE Virtualization Exception\0",
     "#CP Control Protection Exception\0",
 };
+
+void interrupt_register(uint32 irq, handler_t handler)
+{
+    assert(irq >= 0 && irq < 16);
+    handler_table[IRQ_MASTER_NR + irq] = handler;
+}
+
+void interrupt_mask(uint32 irq, bool enable){
+    assert(irq >= 0 && irq < 16);
+    uint16 port;
+    if (irq < 8)
+    {
+        port = PIC_M_DATA;
+    }
+    else
+    {
+        port = PIC_S_DATA;
+        irq -= 8;
+    }
+    if (enable)
+    {
+        outb(port, inb(port) & ~(1 << irq));
+    }
+    else
+    {
+        outb(port, inb(port) | (1 << irq));
+    }
+}
 
 // 通知中断控制器，中断处理结束
 void send_eoi(int vector)
@@ -82,7 +109,7 @@ void exception_handler(
 
 void default_handler(int vector){
     send_eoi(vector);
-    schedule();
+    DEBUGK("[INFO]: [IRQ] [%x] default interrupt called\n", vector);
 }
 
 void pic_init(){
@@ -96,7 +123,7 @@ void pic_init(){
     outb(PIC_S_DATA, 2);          // ICW3: 设置从片连接到主片的 IR2 引脚
     outb(PIC_S_DATA, 0b00000001); // ICW4: 8086模式, 正常EOI
 
-    outb(PIC_M_DATA, 0b11111110); // 关闭所有中断
+    outb(PIC_M_DATA, 0b11111111); // 关闭所有中断
     outb(PIC_S_DATA, 0b11111111); // 关闭所有中断
 }
 
