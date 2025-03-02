@@ -3,12 +3,16 @@
 
 #define EOF -1
 #define EOS '\0'
+
 #define NULL ((void *)0)
+
 #define bool _Bool
 #define true 1
 #define false 0
+
 #define _packed __attribute__((packed))
 #define _ofp __attribute__((optimize("omit-frame-pointer")))
+
 typedef unsigned int size_t;
 typedef char int8;
 typedef short int16;
@@ -20,5 +24,6 @@ typedef unsigned short uint16;
 typedef unsigned int uint32;
 typedef unsigned long long uint64;
 
+typedef uint32 time_t;
 
 #endif // TYPES_H

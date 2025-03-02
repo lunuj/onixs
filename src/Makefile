@@ -8,6 +8,7 @@ QEMUFLAG:= -m 32M\
 			-boot c\
 			-audiodev dbus,id=hda \
 			-machine pcspk-audiodev=hda \
+			-rtc base=localtime \
 
 qemu: $(IMG)
 	qemu-system-i386 $(QEMUFLAG)

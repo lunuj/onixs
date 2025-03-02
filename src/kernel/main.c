@@ -11,15 +11,14 @@
 #include <onixs/interrupt.h>
 #include <onixs/stdlib.h>
 #include <onixs/clock.h>
+#include <onixs/time.h>
+#include <onixs/rtc.h>
 
 void kernel_init(){
     console_clear();
     gdt_init();
     interrupt_init();
-    pit_init();
-    clock_init();
-
+    rtc_init();
     asm volatile("sti\n");
-    // task_init();
     hang(true);
 }
