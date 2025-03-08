@@ -43,10 +43,10 @@ static void set_cursor(){
 }
 
 static void scroll_up(uint16 num){
-    if(PAGE_SIZE*2 + screen * 2 + ROW_SIZE < MEM_SIZE){
-        memcpy(MEM_BASE_PTR + PAGE_SIZE*2 + screen * 2, MEM_BASE_PTR + screen*2 + ROW_SIZE, SCR_SIZE - ROW_SIZE);
-        screen += PAGE_SIZE;
-        cursor += PAGE_SIZE;
+    if(CONSOLE_PAGE_SIZE*2 + screen * 2 + ROW_SIZE < MEM_SIZE){
+        memcpy(MEM_BASE_PTR + CONSOLE_PAGE_SIZE*2 + screen * 2, MEM_BASE_PTR + screen*2 + ROW_SIZE, SCR_SIZE - ROW_SIZE);
+        screen += CONSOLE_PAGE_SIZE;
+        cursor += CONSOLE_PAGE_SIZE;
         console_clearline();
     }else{
         memcpy(MEM_BASE_PTR, MEM_BASE_PTR + screen*2 + ROW_SIZE, SCR_SIZE - ROW_SIZE);

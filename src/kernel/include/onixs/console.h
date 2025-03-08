@@ -19,7 +19,7 @@
 #define HEIGHT 25                     // 屏幕文本行数
 #define ROW_SIZE (WIDTH * 2)          // 每行字节数
 #define SCR_SIZE (ROW_SIZE * HEIGHT)  // 屏幕字节数
-#define PAGE_SIZE (0x410 * 2)
+#define CONSOLE_PAGE_SIZE (0x410 * 2)
 
 #define NUL 0x00
 #define ENQ 0x05

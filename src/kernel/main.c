@@ -18,9 +18,11 @@
 void kernel_init(){
     console_clear();
     memory_map_init();
+    mapping_init();
     interrupt_init();
     // rtc_init();
-    memory_test();
+    char *ptr = (char *)(0x200010);
+    ptr[0] = 'a';
     asm volatile("sti\n");
     hang(true);
 }
