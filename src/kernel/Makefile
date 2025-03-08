@@ -50,6 +50,7 @@ INCLUDE	:= -I./include
 
 ENTRY_POINT	:= 0x10000
 img: $(IMG) $(SYSTEM) $(SYSTEM_MAP)
+	test -n "$$(find $(SYSTEM) -size -100k)"
 	dd if=$(SYSTEM) of=$(IMG) bs=512 count=200 seek=10 conv=notrunc
 
 $(OBJ_ASM): $(DIR_BUILD)/$(DIR_PWD)/%.o: $(DIR_SRC)/$(DIR_PWD)/%.asm

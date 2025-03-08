@@ -12,13 +12,15 @@
 #include <onixs/stdlib.h>
 #include <onixs/clock.h>
 #include <onixs/time.h>
+#include <onixs/memorry.h>
 #include <onixs/rtc.h>
 
 void kernel_init(){
     console_clear();
-    gdt_init();
+    memory_map_init();
     interrupt_init();
-    rtc_init();
+    // rtc_init();
+    memory_test();
     asm volatile("sti\n");
     hang(true);
 }
