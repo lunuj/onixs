@@ -18,7 +18,7 @@ detect_memory:
     int 0x15
     jc error
     add di, cx
-    inc word [ards_count]
+    inc dword [ards_count]
     cmp ebx, 0
     jnz .next
     call detecing
@@ -112,6 +112,10 @@ protect_mode:
     mov bl, 200
 
     call read_disk
+
+    mov eax, 0xAA5555AA
+    mov ebx, ards_count
+
     jmp dword code_selector:0x10000
 
     ud2
@@ -237,6 +241,6 @@ write_disk:
         ret
 
 ards_count:
-    dw 0
+    dd 0
 ards_buffer:
 

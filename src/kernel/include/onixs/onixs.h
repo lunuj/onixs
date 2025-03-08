@@ -1,7 +1,7 @@
 #ifndef ONIXS_H
 #define ONIXS_H
 
-#define ONIXS_MAGIC    20250210
+#define ONIXS_MAGIC    0xAA5555AA
 
 void kernel_init();
 
