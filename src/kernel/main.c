@@ -21,8 +21,9 @@ void kernel_init(){
     mapping_init();
     interrupt_init();
     // rtc_init();
-    char *ptr = (char *)(0x200010);
-    ptr[0] = 'a';
+
+    memory_test();
+
     asm volatile("sti\n");
     hang(true);
 }

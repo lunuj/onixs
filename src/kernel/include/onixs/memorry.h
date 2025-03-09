@@ -15,10 +15,12 @@
 #define MEMORY_PAGE_SIZE 0x1000     // 一页的大小 4K
 #define MEMORY_BASE 0x100000 // 1M，可用内存开始的位置
 
-#define KERNEL_PAGE_DIR 0x200000            //内核页目录 大小4KB
-#define KERNEL_PAGE_ENTRY 0x201000          //内核页表 大小4MB
+#define KERNEL_PAGE_DIR 0x1000            //内核页目录 大小4KB
+#define KERNEL_MEMORY_SIZE (0x100000 * sizeof(KERNEL_PAGE_TABEL))
 
 #define IDX(addr) ((uint32)addr >> 12)
+#define DIDX(addr) (((uint32)addr >> 22) & 0x3FF)
+#define TIDX(addr) (((uint32)addr >> 12) & 0x3FF)
 #define PAGE(idx) ((uint32)idx << 12)
 #define ASSERT_PAGE(addr) assert((addr & 0xFFF) == 0)
 

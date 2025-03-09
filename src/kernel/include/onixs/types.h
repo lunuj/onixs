@@ -12,6 +12,7 @@
 
 #define _packed __attribute__((packed))
 #define _ofp __attribute__((optimize("omit-frame-pointer")))
+#define _inline __attribute__((always_inline)) inline
 
 typedef unsigned int size_t;
 typedef char int8;
@@ -25,5 +26,6 @@ typedef unsigned int uint32;
 typedef unsigned long long uint64;
 
 typedef uint32 time_t;
+typedef uint32 idx_t;
 
 #endif // TYPES_H

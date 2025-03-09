@@ -1,5 +1,7 @@
 #include <onixs/memorry.h>
 
+#define used_pages() (total_pages - free_pages)
+
 static uint32 total_pages;
 static uint32 free_pages;
 static uint32 memory_size;
@@ -9,7 +11,10 @@ static uint32 start_page = 0;
 static uint8 *memory_map;
 static uint32 memory_map_pages;
 
-#define used_pages() (total_pages - free_pages)
+static uint32 KERNEL_PAGE_TABEL[] = {
+    0x2000,
+    0x3000,
+};
 
 /**
  * @brief  获取页目录地址
@@ -35,7 +40,7 @@ void set_cr3(uint32 pde){
  * @retval 无
  * @note 修改cr0寄存器最高位置一
  */
-static void enable_page(){
+static _inline void enable_page(){
     asm volatile(
         "movl %cr0, %eax\n"
         "orl $0x80000000, %eax\n"
@@ -48,7 +53,7 @@ static void enable_page(){
  * @retval 无
  * @note 修改cr0寄存器最高位置零
  */
-static void disable_page(){
+static _inline void disable_page(){
     asm volatile(
         "movl %cr0, %eax\n"
         "andl $0x7FFFFFFF, %eax\n"
@@ -69,33 +74,6 @@ static void entry_init(page_entry_t * entry, uint32 index){
     entry->write = 1;
     entry->user = 1;
     entry->index = index;
-}
-
-/**
- * @brief  初始化页目录和页表
- * @retval 无
- * @note 初始化内核页目录，大小4KB，只初始化了第1个页目录，对应1K个页表，
- * 初始化1K个页表，映射4MB内存，对应位置从0x0000_0000到0x003F_FFFF
- */
-void mapping_init(){
-    //初始化内核页目录，大小4KB，只初始化了第1个页目录，对应1K个页表
-    page_entry_t *pde = (page_entry_t *)KERNEL_PAGE_DIR;
-    memset(pde, 0, MEMORY_PAGE_SIZE);
-    entry_init(&pde[0], IDX(KERNEL_PAGE_ENTRY));
-
-    //初始化1K个页表，映射4MB内存，对应位置从0x0000_0000到0x003F_FFFF
-    page_entry_t *pte = (page_entry_t *)KERNEL_PAGE_ENTRY;
-    memset(pte, 0, MEMORY_PAGE_SIZE);
-    page_entry_t *entry;
-
-    for(size_t tidx = 0; tidx < 1024; tidx ++){
-        entry = &pte[tidx];
-        entry_init(entry, tidx);
-        memory_map[tidx] = 1;
-    }
-
-    set_cr3((uint32)pde);
-    enable_page();
 }
 
 void memory_init(uint32 maigc, uint32 addr)
@@ -130,6 +108,10 @@ void memory_init(uint32 maigc, uint32 addr)
 
     LOGK("[INFO]: Total_pages %d\n", total_pages);
     LOGK("[INFO]: Free_pages %d\n", free_pages);
+
+    if(memory_size < KERNEL_MEMORY_SIZE){
+        panic("[ERROR]: System memory is %dM too small, at least %dM needed\n", memory_size/MEMORY_BASE, KERNEL_MEMORY_SIZE/MEMORY_BASE);
+    }
 }
 
 void memory_map_init(){
@@ -148,6 +130,48 @@ void memory_map_init(){
     LOGK("[INFO]: Total pages %d free pages %d\n", total_pages, free_pages);
 }
 
+/**
+ * @brief  初始化页目录和页表
+ * @retval 无
+ * @note 初始化内核页目录，大小4KB，只初始化了第2个页目录，对应2K个页表，
+ * 初始化2K个页表，映射8MB内存，对应位置从0x0000_0000到0x007F_FFFF
+ */
+void mapping_init(){
+    //初始化内核页目录，大小4KB
+    page_entry_t *pde = (page_entry_t *)KERNEL_PAGE_DIR;
+    memset(pde, 0, MEMORY_PAGE_SIZE);
+
+    idx_t index = 0;
+    for(idx_t didx = 0; didx < (sizeof(KERNEL_PAGE_TABEL) / 4); didx++)
+    {
+        //初始化内核的第didx个页表，大小1024*4byte=4K
+        page_entry_t *pte = (page_entry_t *)KERNEL_PAGE_TABEL[didx];
+        memset(pte, 0, MEMORY_PAGE_SIZE);
+
+        //配置内核的第didx个页目录项，该页目录项指向1024个页表项的首地址
+        page_entry_t *dentry = &pde[didx];
+        entry_init(dentry, IDX((uint32)pte));
+
+        //配置内核的页表项，每个页目录项管理1024个页表项
+        for (size_t tidx = 0; tidx < 1024; tidx++, index++)
+        {
+            //配置内核的第tidx个页表项，共1024个，每个指向一个页索引
+            if(index == 0)      //第0页不映射，为造成空指针访问异常
+                continue;
+            //获取页表指向的页
+            page_entry_t *tentry = &pte[tidx];
+            entry_init(tentry, index);
+            memory_map[index] = 1;
+        }
+        
+    }
+    page_entry_t * entry = &pde[1023];
+    entry_init(entry, IDX(KERNEL_PAGE_DIR));
+
+    set_cr3((uint32)pde);
+    enable_page();
+}
+
 static uint32 get_page(){
     for(size_t i = start_page; i < total_pages; i++){
         if(!memory_map[i]){
@@ -160,6 +184,39 @@ static uint32 get_page(){
         }
     }
     panic("[ERROR]: Out of memory\n");
+}
+
+/**
+ * @brief  获取页目录地址
+ * @retval 指向页目录的指针
+ * @note 0b1111_1111_11|11_1111_1111|0000_0000_0000
+ * 将页目录最后一项指向页目录所在的页，
+ * 访问页目录最后一项作为页表地址，
+ * 再访问页表最后一项作为页地址，
+ * 最后根据页内偏移为0得到页目录地址
+ */
+static page_entry_t* get_pde(){
+    return (page_entry_t *)(0xFFFFF000);
+}
+
+/**
+ * @brief  获取页地址所在的页表地址
+ * @param  vaddr 页地址
+ * @retval 指向页表地址的指针
+ * @note 0b1111_1111_11|00_0000_0000|0000_0000_0000
+ * 将页目录最后一项指向页目录所在的页，
+ * 访问页目录最后一项作为页表地址，
+ * 再访问页表某一项作为页地址，
+ * 最后根据页内偏移为0得到页表地址
+ */
+static page_entry_t* get_pte(uint32 vaddr){
+    return (page_entry_t *)(0xFFC00000 | (DIDX(vaddr)<<12));
+}
+
+static void flush_tlb(uint32 vaddr){
+    asm volatile(
+        "invlpg (%0)"::"r"(vaddr):"memory"
+    );
 }
 
 static void put_page(uint32 addr){
@@ -176,12 +233,22 @@ static void put_page(uint32 addr){
 }
 
 void memory_test(){
-    uint32 page[10];
-    for(size_t i = 0; i < 10; i++){
-        page[i] = get_page();
-    }
+    uint32 vaddr = 0x4000000;
+    uint32 paddr = 0x1400000;
+    uint32 table = 0x900000;
 
-    for(size_t i = 0; i < 10; i++){
-        put_page(page[i]);
-    }
+    page_entry_t *pde = get_pde();
+    page_entry_t *dentry = &pde[DIDX(vaddr)];
+    entry_init(dentry, IDX(table));
+
+    page_entry_t *pte = get_pte(vaddr);
+    page_entry_t *tentry = &pte[TIDX(vaddr)];
+
+    entry_init(tentry, IDX(paddr));
+
+    char *ptr = (char *)(0x4000000);
+    ptr[0] = 'a';
+
+    entry_init(tentry, IDX(0x1500000));
+    flush_tlb(vaddr);
 }
