@@ -1,20 +1,22 @@
-DIR_BUILD 	:= ./build
-DIR_SRC		:= ./src
-DIR_BOOT	:= $(DIR_SRC)/boot
-DIR_KERNEL	:= $(DIR_SRC)/kernel
+BUILD_DIR 	= ./build
+SRC_DIR		= ./src
+IMG			= $(BUILD_DIR)/master.img
 
-all: clean qemu
-qemu:
-	make -C $(DIR_SRC) qemu-g
-bochs:
-	make -C $(DIR_SRC) bochs
-boot:
-	make -C $(DIR_SRC) boot
-kernel:
-	make -C $(DIR_SRC) kernel
-vmdk:
-	make -C $(DIR_SRC) vmdk
+QEMUFLAG	= -m 32M\
+			-boot c\
+			-audiodev dbus,id=hda \
+			-machine pcspk-audiodev=hda \
+			-rtc base=localtime \
+
+qemu: $(IMG)
+	qemu-system-i386 $(QEMUFLAG) -drive file=$<,if=ide,index=0,media=disk,format=raw
+qemu-g: $(IMG)
+	qemu-system-i386 -s -S $(QEMUFLAG) -drive file=$<,if=ide,index=0,media=disk,format=raw
+vmdk: $(VMDK)
+
+$(IMG):
+	make -C $(SRC_DIR) img
 
 .PHONY: clean qemu
 clean:
-	rm -rf $(DIR_BUILD)
+	rm -rf $(BUILD_DIR)
