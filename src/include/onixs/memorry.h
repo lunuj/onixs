@@ -49,7 +49,6 @@ uint32 get_cr3();
 void set_cr3(uint32 pde);
 void memory_map_init();
 void mapping_init();
-void memory_test();
 
 
 #endif // MEMORRY_H

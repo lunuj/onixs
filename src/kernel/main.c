@@ -14,6 +14,7 @@
 #include <onixs/time.h>
 #include <onixs/memorry.h>
 #include <onixs/rtc.h>
+#include <onixs/bitmap.h>
 
 void kernel_init(){
     console_clear();
@@ -22,8 +23,7 @@ void kernel_init(){
     interrupt_init();
     // rtc_init();
 
-    memory_test();
-
+    bitmap_tests();
     asm volatile("sti\n");
     hang(true);
 }

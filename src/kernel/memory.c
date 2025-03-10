@@ -231,24 +231,3 @@ static void put_page(uint32 addr){
     assert(free_pages > 0 && free_pages < total_pages);
     LOGK("[INFO]: Put page %#p\n", addr);
 }
-
-void memory_test(){
-    uint32 vaddr = 0x4000000;
-    uint32 paddr = 0x1400000;
-    uint32 table = 0x900000;
-
-    page_entry_t *pde = get_pde();
-    page_entry_t *dentry = &pde[DIDX(vaddr)];
-    entry_init(dentry, IDX(table));
-
-    page_entry_t *pte = get_pte(vaddr);
-    page_entry_t *tentry = &pte[TIDX(vaddr)];
-
-    entry_init(tentry, IDX(paddr));
-
-    char *ptr = (char *)(0x4000000);
-    ptr[0] = 'a';
-
-    entry_init(tentry, IDX(0x1500000));
-    flush_tlb(vaddr);
-}

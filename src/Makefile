@@ -88,8 +88,7 @@ endif
 	test -n "$$(find $(SYSTEM) -size -100k)"
 	dd if=$(SYSTEM) of=$(IMG) bs=512 count=200 seek=10 conv=notrunc
 
-$(VMDK): $(IMG)
-	qemu-img convert -pO vmdk $< $@
+
 
 .PHONY: clean img
 clean:
