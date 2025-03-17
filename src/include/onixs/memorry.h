@@ -8,6 +8,7 @@
 #include <onixs/onixs.h>
 #include <onixs/stdlib.h>
 #include <onixs/string.h>
+#include <onixs/bitmap.h>
 
 #define ZONE_VALID 1
 #define ZONE_RESERVED 2
@@ -15,8 +16,11 @@
 #define MEMORY_PAGE_SIZE 0x1000     // 一页的大小 4K
 #define MEMORY_BASE 0x100000 // 1M，可用内存开始的位置
 
-#define KERNEL_PAGE_DIR 0x1000            //内核页目录 大小4KB
-#define KERNEL_MEMORY_SIZE (0x100000 * sizeof(KERNEL_PAGE_TABEL))
+#define KERNEL_PAGE_DIR 0x1000              //内核页目录 大小4KB
+#define KERNEL_MAP_BITS 0x4000              //位图存放位置
+#define KERNEL_MEMORY_SIZE (0x100000 * sizeof(KERNEL_PAGE_TABEL))   //1M * 4 * 2
+
+
 
 #define IDX(addr) ((uint32)addr >> 12)
 #define DIDX(addr) (((uint32)addr >> 22) & 0x3FF)

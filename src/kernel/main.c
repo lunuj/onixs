@@ -15,6 +15,7 @@
 #include <onixs/memorry.h>
 #include <onixs/rtc.h>
 #include <onixs/bitmap.h>
+extern void memory_test();
 
 void kernel_init(){
     console_clear();
@@ -23,7 +24,7 @@ void kernel_init(){
     interrupt_init();
     // rtc_init();
 
-    bitmap_tests();
+    memory_test();
     asm volatile("sti\n");
     hang(true);
 }

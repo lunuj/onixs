@@ -16,6 +16,8 @@ static uint32 KERNEL_PAGE_TABEL[] = {
     0x3000,
 };
 
+bitmap_t kernel_map;
+
 /**
  * @brief  获取页目录地址
  * @retval [uint32] 页目录地址
@@ -128,6 +130,10 @@ void memory_map_init(){
     }
 
     LOGK("[INFO]: Total pages %d free pages %d\n", total_pages, free_pages);
+
+    uint32 legnth = (IDX(KERNEL_MEMORY_SIZE) - IDX(MEMORY_BASE)) / 8;
+    bitmap_init(&kernel_map, (uint8 *)KERNEL_MAP_BITS, legnth, IDX(MEMORY_BASE));
+    bitmap_scan(&kernel_map, memory_map_pages);
 }
 
 /**
@@ -230,4 +236,57 @@ static void put_page(uint32 addr){
     }
     assert(free_pages > 0 && free_pages < total_pages);
     LOGK("[INFO]: Put page %#p\n", addr);
+}
+
+static uint32 scan_page(bitmap_t * map, uint32 count){
+    assert(count > 0);
+    int32 index = bitmap_scan(map, count);
+    if(index == EOF){
+        panic("[ERRIR]: scan page error");
+    }
+    uint32 addr = PAGE(index);
+    LOGK("[INFO]: Scan page %#p count %d\n", addr, count);
+    return addr;
+}
+
+static void reset_page(bitmap_t * map, uint32 addr, uint32 count){
+    ASSERT_PAGE(addr);
+    assert(count > 0);
+    uint32 index = IDX(addr);
+
+    for (size_t i = 0; i < count; i++)
+    {
+        assert(bitmap_test(map, index + i));
+        bitmap_set(map, index + i, 0);
+    }
+}
+
+uint32 alloc_kpage(uint32 count){
+    assert(count > 0);
+    uint32 vaddr = scan_page(&kernel_map, count);
+    LOGK("[INFO]: alloc kernel pages %#p count %d\n", vaddr, count);
+    return vaddr;
+}
+
+void free_kpage(uint32 vaddr, uint32 count){
+    ASSERT_PAGE(vaddr);
+    assert(count > 0);
+    reset_page(&kernel_map, vaddr, count);
+    LOGK("[INFO]: free kernel pages %#p count %d\n", vaddr, count);
+}
+
+void memory_test(){
+    uint32 * pages = (uint32 *)(0x200000);
+    uint32 count = 0x6fe;
+    for (size_t i = 0; i < count; i++)
+    {
+        pages[i] = alloc_kpage(1);
+        LOGK("%#x\n", i);
+    }
+
+    for (size_t i = 0; i < count; i++)
+    {
+        free_kpage(pages[i], 1);
+    }
+    
 }

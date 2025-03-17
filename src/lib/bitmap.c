@@ -70,19 +70,3 @@ int bitmap_scan(bitmap_t * map, uint32 count)
     }
     return start + map->offset;
 }
-
-#define LEN 2
-uint8 buf[LEN];
-bitmap_t map;
-
-void bitmap_tests(){
-    bitmap_init(&map, buf, LEN, 0);
-    for(size_t i = 0; i < 33; i++){
-        idx_t idx = bitmap_scan(&map, 1);
-        if(idx == EOF){
-            LOGK("TEST\n");
-            break;
-        }
-        LOGK("%d\n", idx);
-    }
-}
