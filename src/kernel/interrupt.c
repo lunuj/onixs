@@ -159,3 +159,70 @@ void interrupt_init(){
     pic_init();
     idt_init();
 }
+
+/**
+ * @brief  置位 IF 位
+ * @retval 无
+ * @note 
+ */
+void _inline interrupt_enable(){
+    asm volatile("sti\n");
+}
+
+bool _inline interrupt_enable_ret(){
+    asm volatile(
+        "pushfl\n"              // 将当前 eflags 压入栈中
+        "sti\n"
+        "popl %eax\n"           // 将 eflags 弹出到 eax
+        "shrl $9, %eax\n"        // 将 eax 右移 9 位，得到 IF 位
+        "andl $1, %eax\n"        // 获取 IF 位
+    );
+}
+
+/**
+ * @brief  清除 IF 位
+ * @retval 无
+ * @note 
+ */
+void _inline interrupt_disable(){
+    asm volatile("cli\n");
+}
+
+bool _inline interrupt_disable_ret(){
+    asm volatile(
+        "pushfl\n"              // 将当前 eflags 压入栈中
+        "cli\n"
+        "popl %eax\n"           // 将 eflags 弹出到 eax
+        "shrl $9, %eax\n"        // 将 eax 右移 9 位，得到 IF 位
+        "andl $1, %eax\n"        // 获取 IF 位
+    );
+}
+
+/**
+ * @brief  获取当前 IF 位状态
+ * @retval 当前 IF 位状态
+ * @note 
+ */
+bool interrupt_get_state(){
+    asm volatile(
+        "pushfl\n"              // 将当前 eflags 压入栈中
+        "popl %eax\n"           // 将 eflags 弹出到 eax
+        "shrl $9, %eax\n"        // 将 eax 右移 9 位，得到 IF 位
+        "andl $1, %eax\n"        // 获取 IF 位
+    );
+}
+
+/**
+ * @brief  设置当前 IF 位
+ * @param  state
+ * @retval 无
+ * @note 
+ */
+void interrupt_set_state(bool state){
+    if (state)
+    {
+        interrupt_enable();
+    }else{
+        interrupt_disable();
+    }
+}

@@ -55,5 +55,12 @@ void interrupt_register(uint32 irq, handler_t handler);
 void interrupt_mask(uint32 irq, bool enable);
 void send_eoi(int vector);
 
+void interrupt_disable();
+bool interrupt_disable_ret();
+void interrupt_enable();
+bool interrupt_enable_ret();
+bool interrupt_get_state();
+void interrupt_set_state(bool state);
+
 #endif // INTERRUPT_H
 

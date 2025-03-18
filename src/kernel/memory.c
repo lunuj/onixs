@@ -274,19 +274,3 @@ void free_kpage(uint32 vaddr, uint32 count){
     reset_page(&kernel_map, vaddr, count);
     LOGK("[INFO]: free kernel pages %#p count %d\n", vaddr, count);
 }
-
-void memory_test(){
-    uint32 * pages = (uint32 *)(0x200000);
-    uint32 count = 0x6fe;
-    for (size_t i = 0; i < count; i++)
-    {
-        pages[i] = alloc_kpage(1);
-        LOGK("%#x\n", i);
-    }
-
-    for (size_t i = 0; i < count; i++)
-    {
-        free_kpage(pages[i], 1);
-    }
-    
-}
