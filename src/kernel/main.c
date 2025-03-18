@@ -1,9 +1,10 @@
 #include <onixs/onixs.h>
 #include <onixs/console.h>
 #include <onixs/debug.h>
-#include <onixs/global.h>
 #include <onixs/interrupt.h>
 #include <onixs/memorry.h>
+#include <onixs/clock.h>
+#include <onixs/task.h>
 
 void intr_test(){
 
@@ -15,11 +16,10 @@ void kernel_init(){
     mapping_init();
     interrupt_init();
 
+    clock_init();
+    task_init();
+
     interrupt_enable();
-    bool intr = interrupt_disable_ret();
-    interrupt_set_state(intr);
-    LOGK("before: %d\n", intr);
-    LOGK("now: %d\n", interrupt_get_state());
 
     hang(true);
 }

@@ -3,6 +3,7 @@
 #include <onixs/assert.h>
 #include <onixs/debug.h>
 #include <onixs/clock.h>
+#include <onixs/task.h>
 
 // 时间片计数器
 uint32 volatile jiffies = 0;
@@ -20,19 +21,15 @@ void clock_handler(int vector)
 {
     assert(vector == 0x20);
     send_eoi(vector);
-    static int beeping = 0;
-    if(beeping == 0){
-        beep_start();
-    }
-    if(beeping == 5){
-        beep_stop();
-    }
-    if(beeping++ > 500){
-        beeping = 0;
-    }
     jiffies++;
-    if(jiffies%100==0){
-        DEBUGK("clock sec %d ...\n", jiffies/100);
+    task_t * task = running_task();
+    assert(task->magic == ONIXS_MAGIC);
+
+    task->jiffies = jiffies;
+    task->ticks--;
+    if(!task->ticks){
+        task->ticks = task->priority;
+        schedule();
     }
 }
 

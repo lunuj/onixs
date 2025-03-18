@@ -1,6 +1,7 @@
 #include <onixs/console.h>
 #include <onixs/io.h>
 #include <onixs/string.h>
+#include <onixs/interrupt.h>
 
 static uint32 screen;
 static uint32 cursor;
@@ -43,6 +44,7 @@ static void set_cursor(){
 }
 
 static void scroll_up(uint16 num){
+    uint32 irqr = interrupt_disable_ret();
     if(CONSOLE_PAGE_SIZE*2 + screen * 2 + ROW_SIZE < MEM_SIZE){
         memcpy(MEM_BASE_PTR + CONSOLE_PAGE_SIZE*2 + screen * 2, MEM_BASE_PTR + screen*2 + ROW_SIZE, SCR_SIZE - ROW_SIZE);
         screen += CONSOLE_PAGE_SIZE;
@@ -56,6 +58,7 @@ static void scroll_up(uint16 num){
     }
     set_screen();
     set_cursor();
+    interrupt_set_state(irqr);
 }
 
 static void command_bs(){
