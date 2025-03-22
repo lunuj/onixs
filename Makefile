@@ -8,15 +8,16 @@ QEMUFLAG	= -m 32M\
 			-machine pcspk-audiodev=hda \
 			-rtc base=localtime \
 
-qemu: $(IMG)
-	make -C $(SRC_DIR) img
-	qemu-system-i386 $(QEMUFLAG) -drive file=$<,if=ide,index=0,media=disk,format=raw
-qemu-g: $(IMG)
-	make -C $(SRC_DIR) img
-	qemu-system-i386 -s -S $(QEMUFLAG) -drive file=$<,if=ide,index=0,media=disk,format=raw
-$(VMDK): $(IMG)
+qemu: img
+	qemu-system-i386 $(QEMUFLAG) -drive file=$(IMG),if=ide,index=0,media=disk,format=raw
+qemu-g: img
+	qemu-system-i386 -s -S $(QEMUFLAG) -drive file=$(IMG),if=ide,index=0,media=disk,format=raw
+$(VMDK): img
 	qemu-img convert -pO vmdk $< $@
 
-.PHONY: clean qemu
+img:
+	make -C $(SRC_DIR) img
+
+.PHONY: clean qemu img
 clean:
 	rm -rf $(BUILD_DIR)

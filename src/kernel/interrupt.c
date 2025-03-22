@@ -10,7 +10,6 @@ gate_t idt[IDT_SIZE];
 pointer_t idt_ptr;
 
 handler_t handler_table[IDT_SIZE];
-extern handler_t handler_entry_table[ENTRY_SIZE];
 
 static char *messages[] = {
     "#DE Divide Error\0",
@@ -149,6 +148,17 @@ void idt_init(){
     for(int size = 0x20; size < ENTRY_SIZE; size++){
         handler_table[size] = default_handler;
     }
+
+    gate_t *gate = &idt[0x80];
+    handler_t handler = syscall_handler;
+    gate->offset0 = (uint32)handler&0xFFFF;
+    gate->offset1 = ((uint32)handler>>16)&0xFFFF;
+    gate->selector = 1<<3;
+    gate->reserved = 0;
+    gate->type = 0b1110;
+    gate->segmeny = 0;
+    gate->DPL = 3;
+    gate->present = 1;
     
     idt_ptr.base = (uint32)idt;
     idt_ptr.limit = sizeof(idt) - 1;

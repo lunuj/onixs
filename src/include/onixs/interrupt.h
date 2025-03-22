@@ -50,6 +50,9 @@ typedef struct gate_t
     uint16 offset1;
 }_packed gate_t;
 
+extern handler_t handler_entry_table[ENTRY_SIZE];
+extern handler_t syscall_handler();
+
 void interrupt_init();
 void interrupt_register(uint32 irq, handler_t handler);
 void interrupt_mask(uint32 irq, bool enable);

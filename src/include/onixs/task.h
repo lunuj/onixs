@@ -28,7 +28,7 @@ typedef struct task_t{
     uint32 priority;                // 任务优先级
     uint32 ticks;                   // 剩余时间片
     uint32 jiffies;                 // 上次执行时全局时间片
-    uint32 name[TASK_NAME_LEN];     // 任务名
+    char name[TASK_NAME_LEN];     // 任务名
     uint32 uid;                     // 用户id
     uint32 pde;                     // 页目录物理地址
     struct bitmap_t * vmap;         // 进程虚拟内存位图
