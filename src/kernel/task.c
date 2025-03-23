@@ -7,7 +7,7 @@
 #include <onixs/syscall.h>
 
 static task_t * task_table[TASK_NUMBER];
-
+static list_t block_list;            // 任务默认阻塞链表
 /**
  * @brief  获取当前任务队列中空余地址
  * @retval 任务的地址页
@@ -113,7 +113,7 @@ uint32 thread_a(){
     interrupt_enable();
     while(1){
         printk("A");
-        yield();
+        test();
     }
     return 0;
 }
@@ -122,7 +122,7 @@ uint32 thread_b(){
     interrupt_enable();
     while(1){
         printk("B");
-        yield();
+        test();
     }
     return 0;
 }
@@ -131,15 +131,47 @@ uint32 thread_c(){
     interrupt_enable();
     while(1){
         printk("C");
-        yield();
+        test();
     }
     return 0;
 }
 
 void task_init(){
+    list_init(&block_list);
     task_setup();
 
-    task_create(thread_a, "a", 1, KERNEL_USER);
-    task_create(thread_b, "b", 1, KERNEL_USER);
-    task_create(thread_c, "c", 1, KERNEL_USER);
+    task_create(thread_a, "a", 5, KERNEL_USER);
+    task_create(thread_b, "b", 5, KERNEL_USER);
+    task_create(thread_c, "c", 5, KERNEL_USER);
+}
+
+void task_block(task_t * task, list_t * blist, task_state_t state)
+{
+    assert(!interrupt_get_state());
+    assert(task->node.prev == NULL);
+    assert(task->node.next == NULL);
+    assert(state != TASK_READY && state != TASK_RUNNING);
+
+    if(blist == NULL){
+        blist = &block_list;
+    }
+    list_push(blist, &task->node);
+
+    task->state = state;
+    task_t * current = running_task();
+    if(current == task){
+        schedule();
+    }
+}
+
+void task_unblock(task_t * task)
+{
+    assert(!interrupt_get_state());
+
+    list_remove(&task->node);
+    
+    assert(task->node.prev == NULL);
+    assert(task->node.next == NULL);
+
+    task->state = TASK_READY;
 }

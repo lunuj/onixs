@@ -16,7 +16,15 @@ static void sys_default()
 }
 
 static uint32 sys_test(){
-    LOGK("syscall test...\n");
+    // LOGK("syscall test...\n");
+    static task_t * task;
+    if(!task){
+        task = running_task();
+        task_block(task, NULL, TASK_BLOCKED);
+    }else{
+        task_unblock(task);
+        task = NULL;
+    }
     return 255;
 }
 

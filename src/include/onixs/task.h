@@ -3,6 +3,7 @@
 
 #include <onixs/types.h>
 #include <onixs/bitmap.h>
+#include <onixs/list.h>
 
 #define KERNEL_USER 0
 #define NORMAL_USER 1
@@ -24,11 +25,12 @@ typedef uint32 target_t();
 
 typedef struct task_t{
     uint32 *stack;                  // 内核栈
+    list_node_t node;               // 任务阻塞节点
     task_state_t state;             // 任务状态
     uint32 priority;                // 任务优先级
     uint32 ticks;                   // 剩余时间片
     uint32 jiffies;                 // 上次执行时全局时间片
-    char name[TASK_NAME_LEN];     // 任务名
+    char name[TASK_NAME_LEN];       // 任务名
     uint32 uid;                     // 用户id
     uint32 pde;                     // 页目录物理地址
     struct bitmap_t * vmap;         // 进程虚拟内存位图
@@ -49,6 +51,8 @@ extern bitmap_t kernel_map;
 void task_init();
 void schedule();
 task_t * running_task();
+void task_block(task_t * task, list_t * blist, task_state_t state);
+void task_unblock(task_t * task);
 extern void task_switch(task_t *next);
 
 #endif // TASK_H
