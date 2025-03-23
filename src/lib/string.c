@@ -128,9 +128,13 @@ char * number(char *str, uint32 num, int base, int size, int precision, int flag
     }
 
     memset(tmp, pad, 35);
-    while(num){
-        tmp[33 - index++] = digits[num%base];
-        num/=base;
+    if(num == 0){
+        tmp[33 - index++] = digits[0];
+    }else{
+        while(num){
+            tmp[33 - index++] = digits[num%base];
+            num/=base;
+        }
     }
 
     size = size > 0 ? size:index;
