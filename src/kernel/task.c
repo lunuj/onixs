@@ -6,8 +6,9 @@
 #include <onixs/interrupt.h>
 #include <onixs/syscall.h>
 
-static task_t * task_table[TASK_NUMBER];
 static list_t block_list;            // 任务默认阻塞链表
+static task_t * task_table[TASK_NUMBER];
+static task_t *idle_task;
 /**
  * @brief  获取当前任务队列中空余地址
  * @retval 任务的地址页
@@ -45,6 +46,10 @@ static task_t * task_searchTask(task_state_t state){
             continue;
         if(task == NULL || task->ticks < ptr->ticks || (task->ticks == ptr->ticks & ptr->jiffies < task->jiffies))
             task = ptr;
+    }
+
+    if(task == NULL && state == TASK_READY){
+        task = idle_task;
     }
     return task;
 }
@@ -109,40 +114,11 @@ static void task_setup(){
     memset(task_table, 0, sizeof(task_table));
 }
 
-uint32 thread_a(){
-    interrupt_enable();
-    while(1){
-        printk("A");
-        test();
-    }
-    return 0;
-}
-
-uint32 thread_b(){
-    interrupt_enable();
-    while(1){
-        printk("B");
-        test();
-    }
-    return 0;
-}
-
-uint32 thread_c(){
-    interrupt_enable();
-    while(1){
-        printk("C");
-        test();
-    }
-    return 0;
-}
-
 void task_init(){
     list_init(&block_list);
     task_setup();
-
-    task_create(thread_a, "a", 5, KERNEL_USER);
-    task_create(thread_b, "b", 5, KERNEL_USER);
-    task_create(thread_c, "c", 5, KERNEL_USER);
+    idle_task = task_create(idle_thread, "idle", 1, KERNEL_USER);
+    task_create(init_thread, "init", 5, NORMAL_USER);
 }
 
 void task_block(task_t * task, list_t * blist, task_state_t state)

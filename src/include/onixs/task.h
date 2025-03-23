@@ -21,7 +21,7 @@ typedef enum task_state_t{
     TASK_DIED,          // 结束
 } task_state_t;
 
-typedef uint32 target_t();
+typedef void target_t();
 
 typedef struct task_t{
     uint32 *stack;                  // 内核栈
@@ -47,6 +47,8 @@ typedef struct task_frame_t
 }task_frame_t;
 
 extern bitmap_t kernel_map;
+extern void idle_thread();
+extern void init_thread();
 
 void task_init();
 void schedule();
