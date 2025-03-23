@@ -4,6 +4,7 @@
 #include <onixs/task.h>
 #include <onixs/memorry.h>
 #include <onixs/interrupt.h>
+#include <onixs/syscall.h>
 
 static task_t * task_table[TASK_NUMBER];
 
@@ -55,6 +56,7 @@ task_t *running_task(){
 }
 
 void schedule(){
+    assert(!interrupt_get_state()); // 不可中断
     task_t *current = running_task();
     task_t *next = task_searchTask(TASK_READY);
 
@@ -111,6 +113,7 @@ uint32 thread_a(){
     interrupt_enable();
     while(1){
         printk("A");
+        yield();
     }
     return 0;
 }
@@ -119,6 +122,7 @@ uint32 thread_b(){
     interrupt_enable();
     while(1){
         printk("B");
+        yield();
     }
     return 0;
 }
@@ -127,6 +131,7 @@ uint32 thread_c(){
     interrupt_enable();
     while(1){
         printk("C");
+        yield();
     }
     return 0;
 }

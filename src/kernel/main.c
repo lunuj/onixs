@@ -4,6 +4,7 @@
 #include <onixs/interrupt.h>
 #include <onixs/memorry.h>
 #include <onixs/task.h>
+#include <onixs/clock.h>
 #include <onixs/gate.h>
 
 void kernel_init(){
@@ -11,10 +12,10 @@ void kernel_init(){
     memory_map_init();
     mapping_init();
     interrupt_init();
+    clock_init();
     task_init();
     syscall_init();
+    interrupt_enable();
 
-    asm volatile("movl $0, %eax");
-    asm volatile("int $0x80");
     hang(true);
 }

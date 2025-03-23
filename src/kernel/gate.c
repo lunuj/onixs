@@ -1,4 +1,6 @@
 #include <onixs/gate.h>
+#include <onixs/syscall.h>
+#include <onixs/task.h>
 
 handler_t syscall_table[SYSCALL_SIZE];
 
@@ -18,10 +20,16 @@ static uint32 sys_test(){
     return 255;
 }
 
+static void sys_yield(){
+    // LOGK("syscall yield...\n");
+    schedule();
+}
+
 void syscall_init(){
     for (size_t i = 0; i < SYSCALL_SIZE; i++)
     {
         syscall_table[i] = sys_default;
     }
-    syscall_table[0] = sys_test;
+    syscall_table[SYS_NR_TEST] = sys_test;
+    syscall_table[SYS_NR_YIELD] = sys_yield;
 }
