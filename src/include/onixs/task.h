@@ -46,15 +46,20 @@ typedef struct task_frame_t
     uint32 (*eip)(void);
 }task_frame_t;
 
+extern uint32 volatile jiffies;
+extern uint32 jiffy;
+
 extern bitmap_t kernel_map;
 extern void idle_thread();
 extern void init_thread();
-
+extern void test_thread();
 void task_init();
 void schedule();
 task_t * running_task();
 void task_block(task_t * task, list_t * blist, task_state_t state);
 void task_unblock(task_t * task);
+void task_sleep(uint32 ms);
+void task_wakeup();
 extern void task_switch(task_t *next);
 
 #endif // TASK_H

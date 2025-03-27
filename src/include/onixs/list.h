@@ -3,6 +3,8 @@
 
 #include <onixs/types.h>
 
+#define element_entry(type, member, ptr) (type *)((uint32)ptr - element_offset(type, member))
+#define element_offset(type, member) (uint32)(&((type *)0)->member)
 typedef struct list_node_t
 {
     struct list_node_t *prev;

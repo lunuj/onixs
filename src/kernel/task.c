@@ -7,8 +7,10 @@
 #include <onixs/syscall.h>
 
 static list_t block_list;            // 任务默认阻塞链表
+static list_t sleep_list;
 static task_t * task_table[TASK_NUMBER];
 static task_t *idle_task;
+
 /**
  * @brief  获取当前任务队列中空余地址
  * @retval 任务的地址页
@@ -116,9 +118,11 @@ static void task_setup(){
 
 void task_init(){
     list_init(&block_list);
+    list_init(&sleep_list);
     task_setup();
     idle_task = task_create(idle_thread, "idle", 1, KERNEL_USER);
     task_create(init_thread, "init", 5, NORMAL_USER);
+    task_create(test_thread, "test", 5, NORMAL_USER);
 }
 
 void task_block(task_t * task, list_t * blist, task_state_t state)
@@ -150,4 +154,55 @@ void task_unblock(task_t * task)
     assert(task->node.next == NULL);
 
     task->state = TASK_READY;
+}
+
+void task_sleep(uint32 ms)
+{
+    assert(!interrupt_get_state());
+
+    uint32 ticks = ms/jiffy;
+    ticks = ticks > 0 ? ticks : 1;
+
+    task_t * current = running_task();
+    current->ticks = jiffies + ticks;
+
+    list_t * list = &sleep_list;
+    list_node_t * anchor = &list->tail;
+
+    for (list_node_t * ptr = list->head.next;ptr != NULL; ptr = ptr->next)
+    {
+        task_t * task = element_entry(task_t, node, ptr);
+
+        if(task->ticks > current->ticks){
+            anchor = ptr;
+            break;
+        }
+    }
+
+    assert(current->node.prev == NULL);
+    assert(current->node.next == NULL);
+
+    list_insert_before(anchor, &current->node);
+
+    current->state = TASK_SLEEPING;
+
+    schedule();
+}
+
+void task_wakeup()
+{
+    assert(!interrupt_get_state());
+    list_t * list = &sleep_list;
+    for (list_node_t * ptr =  list->head.next;ptr != &list->tail;)
+    {
+        task_t * task = element_entry(task_t, node, ptr);
+        if(task->ticks > jiffies){
+            break;
+        }
+
+        ptr = ptr->next;
+        task->ticks = 0;
+        task_unblock(task);
+    }
+    
 }

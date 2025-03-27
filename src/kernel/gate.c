@@ -28,6 +28,11 @@ static uint32 sys_test(){
     return 255;
 }
 
+static void sys_sleep(uint32 ms){
+    // LOGK("syscall yield...\n");
+    task_sleep(ms);
+}
+
 static void sys_yield(){
     // LOGK("syscall yield...\n");
     schedule();
@@ -39,5 +44,6 @@ void syscall_init(){
         syscall_table[i] = sys_default;
     }
     syscall_table[SYS_NR_TEST] = sys_test;
+    syscall_table[SYS_NR_SLEEP] = task_sleep;
     syscall_table[SYS_NR_YIELD] = sys_yield;
 }

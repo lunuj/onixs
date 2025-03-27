@@ -24,7 +24,7 @@ void clock_handler(int vector)
     jiffies++;
     task_t * task = running_task();
     assert(task->magic == ONIXS_MAGIC);
-
+    task_wakeup();
     task->jiffies = jiffies;
     task->ticks--;
     if(!task->ticks){

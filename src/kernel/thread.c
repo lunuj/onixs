@@ -8,7 +8,7 @@ void idle_thread()
     uint32 counter = 0;
     while (true)
     {
-        LOGK("[INFO]: idle task %d\n",counter++);
+        // LOGK("[INFO]: idle task %d\n",counter++);
         asm volatile(
             "sti\n"
             "hlt\n"
@@ -23,6 +23,16 @@ void init_thread()
     interrupt_enable();
     while(true){
         LOGK("[INFO]: init task %d\n", counter++);
-        // test();
+        sleep(500);
+    }
+}
+
+void test_thread()
+{
+    uint32 counter = 0;
+    interrupt_enable();
+    while(true){
+        LOGK("[INFO]: test task %d\n", counter++);
+        sleep(1000);
     }
 }
