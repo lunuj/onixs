@@ -206,3 +206,8 @@ void task_wakeup()
     }
     
 }
+
+void task_yield()
+{
+    schedule();
+}
