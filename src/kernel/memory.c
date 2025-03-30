@@ -1,4 +1,5 @@
 #include <onixs/memorry.h>
+#include <onixs/multiboot2.h>
 
 #define used_pages() (total_pages - free_pages)
 
@@ -81,10 +82,9 @@ static void entry_init(page_entry_t * entry, uint32 index){
 void memory_init(uint32 maigc, uint32 addr)
 {
     uint32 count;
-    ards_t *ptr;
     if(maigc == ONIXS_MAGIC){
         count = *(uint32 *)addr;
-        ptr = (ards_t *)(addr + 4);
+        ards_t *ptr = (ards_t *)(addr + 4);
 
         for(size_t i = 0; i < count; i++, ptr++){
             LOGK("[INFO]: Memory base %#p\n", ptr->base);
@@ -95,7 +95,29 @@ void memory_init(uint32 maigc, uint32 addr)
                 memory_size = (uint32)ptr->size;
             }
         }
-    }else{
+    }else if(maigc == MULTIBOOT2_MAGIC){
+        uint32 size = *(unsigned int *)addr;
+        multi_tag_t * tag = (multi_tag_t *)(addr + 8);
+
+        LOGK("[INFO]: Announced mbi size %#x\n", size);
+        while(tag->type != MULTIBOOT_TAG_TYPE_END){
+            if(tag->type == MULTIBOOT_TAG_TYPE_MMAP)
+                break;
+            tag = (multi_tag_t *)((uint32)tag+((tag->size+7) & ~7));
+        }
+        multi_tag_mmap_t * mtag = (multi_tag_mmap_t *)tag;
+        multi_mmap_entry_t * entry = mtag->entries;
+        while((uint32)entry < (uint32)tag + tag->size){
+            LOGK("[INFO]: Memory base %#p, size %#p, type %d\n", (uint32)entry->addr, (uint32)entry->len, (uint32)entry->type);
+            count++;
+            if(entry->type == ZONE_VALID && entry->len > memory_size){
+                memory_base = (uint32)entry->addr;
+                memory_size = (uint32)entry->len;
+            }
+            entry = (multi_mmap_entry_t *)((uint32)entry + mtag->entry_size);
+        }
+    }
+    else{
         panic("[ERROR]: Memory init magic unknow %#p\n", maigc);
     }
     LOGK("[INFO]: ARDS count %d\n", count);

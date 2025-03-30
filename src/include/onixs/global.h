@@ -3,6 +3,12 @@
 
 #include <onixs/types.h>
 
+#define KERNEL_CODE_IDX 1
+#define KERNEL_DATA_IDX 2
+
+#define KERNEL_CODE_SELECROT (KERNEL_CODE_IDX << 3)
+#define KERNEL_DATA_SELECROT (KERNEL_DATA_IDX << 3)
+
 #define GDT_SIZE 128
 
 typedef struct descriptor_t
