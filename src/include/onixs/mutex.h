@@ -14,13 +14,13 @@ void mutex_lock(mutex_t * mutex);
 void mutex_unlock(mutex_t * mutex);
 
 
-typedef struct spinlock_t {
+typedef struct lock_t {
     struct task_t *holder;
     mutex_t mutex;
     uint32 repeat;
-}spinlock_t;
+}lock_t;
 
-void spin_init();
-void spin_lock();
-void spin_unlock();
+void lock_init(lock_t * lock);
+void lock_acquire(lock_t * lock);
+void lock_release(lock_t * lock);
 #endif // MUTEX_H
