@@ -45,3 +45,38 @@ void mutex_unlock(mutex_t * mutex)
 
     interrupt_set_state(intr);
 }
+
+
+void spin_init(spinlock_t * lock)
+{
+    lock->holder = NULL;
+    lock->repeat = 0;
+    mutex_init(&lock->mutex);
+}
+
+void spin_lock(spinlock_t * lock)
+{
+    task_t * current = running_task();
+    if(lock->holder != current){
+        mutex_lock(&lock->mutex);
+        lock->holder = current;
+        assert(lock->repeat == 0);
+        lock->repeat = 1;
+    }else{
+        lock->repeat++;
+    }
+}
+
+void spin_unlock(spinlock_t * lock)
+{
+    task_t * current = running_task();
+    assert(lock->holder == current);
+    if(lock->repeat > 1){
+        lock->repeat--;
+        return;
+    }
+    assert(lock->repeat == 1);
+    lock->holder = NULL;
+    lock->repeat = 0;
+    mutex_unlock(&lock->mutex);
+}
