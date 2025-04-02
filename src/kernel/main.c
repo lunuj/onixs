@@ -6,7 +6,7 @@
 #include <onixs/task.h>
 #include <onixs/clock.h>
 #include <onixs/gate.h>
-#include <onixs/list.h>
+#include <onixs/keyboard.h>
 
 void kernel_init(){
     console_clear();
@@ -18,6 +18,7 @@ void kernel_init(){
 
     task_init();
     syscall_init();
+    keyboard_init();
 
     interrupt_enable();
     hang(true);
