@@ -125,6 +125,7 @@ typedef enum
 } KEY;
 
 void keyboard_handler(int vector);
+uint32 keyboard_read(char * buf, uint32 count);
 void keyboard_init();
 
 #endif // KEYBOARD_H

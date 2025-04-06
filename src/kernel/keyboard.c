@@ -1,9 +1,20 @@
 #include <onixs/keyboard.h>
+#include <onixs/mutex.h>
+#include <onixs/task.h>
+#include <onixs/fifo.h>
+
+#define BUFFER_SIZE 64
 
 static bool capslock_state; // 大写锁定
 static bool scrlock_state;  // 滚动锁定
 static bool numlock_state;  // 数字锁定
 static bool extcode_state;  // 扩展码状态
+
+static lock_t lock;
+static task_t * waiter;
+
+static char buf[BUFFER_SIZE];
+static fifo_t fifo;
 
 static char keymap[][4] = {
     /* 扫描码 未与 shift 组合  与 shift 组合 以及相关状态 */
@@ -209,7 +220,29 @@ void keyboard_handler(int vector)
     if(ch == INV)
         return;
 
-    LOGK("[INFO]: keyboard input %c\n", ch);
+    // LOGK("[INFO]: keyboard input %c\n", ch);
+    fifo_put(&fifo, ch);
+    if(waiter != NULL){
+        task_unblock(waiter);
+        waiter = NULL;
+    }
+}
+
+uint32 keyboard_read(char * buf, uint32 count)
+{
+    lock_acquire(&lock);
+    int nr = 0;
+    while(nr < count)
+    {
+        while(fifo_empty(&fifo))
+        {
+            waiter = running_task();
+            task_block(waiter, NULL, TASK_WAITTING);
+        }
+        buf[nr++] = fifo_get(&fifo);
+    }
+    lock_release(&lock);
+    return count;
 }
 
 void keyboard_init()
@@ -218,6 +251,11 @@ void keyboard_init()
     scrlock_state = false;
     capslock_state = false;
     extcode_state = false;
+
+    fifo_init(&fifo, buf, BUFFER_SIZE);
+    lock_init(&lock);
+    waiter = NULL;
+    
     keyboard_setled();
     interrupt_register(IRQ_KEYBOARD, keyboard_handler);
     interrupt_mask(IRQ_KEYBOARD, true);
