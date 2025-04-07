@@ -2,9 +2,12 @@
 #include <onixs/debug.h>
 #include <onixs/types.h>
 #include <onixs/task.h>
+#include <onixs/global.h>
 #include <onixs/memorry.h>
 #include <onixs/interrupt.h>
 #include <onixs/syscall.h>
+
+extern tss_t tss;
 
 static list_t block_list;            // 任务默认阻塞链表
 static list_t sleep_list;
@@ -62,6 +65,15 @@ task_t *running_task(){
         "andl $0xfffff000, %eax\n");
 }
 
+void task_activate(task_t * task)
+{
+    assert(task->magic == ONIXS_MAGIC);
+    if(task->uid != KERNEL_USER)
+    {
+        tss.esp0 = (uint32)task + MEMORY_PAGE_SIZE;
+    }
+}
+
 void schedule(){
     assert(!interrupt_get_state()); // 不可中断
     task_t *current = running_task();
@@ -77,7 +89,7 @@ void schedule(){
     next->state = TASK_RUNNING;
     if(next == current)
         return;
-
+    task_activate(next);
     task_switch(next);
 }
 
@@ -114,6 +126,46 @@ static void task_setup(){
     task->ticks = 1;
 
     memset(task_table, 0, sizeof(task_table));
+}
+
+void task_to_user_mode(target_t target)
+{
+    task_t * task = running_task();
+
+    uint32 addr = (uint32)task + MEMORY_PAGE_SIZE;
+
+    addr -= sizeof(intr_frame_t);
+    intr_frame_t * iframe = (intr_frame_t *)(addr);
+
+    iframe->vector = 0x20;
+    iframe->edi = 1;
+    iframe->esi = 2;
+    iframe->ebp = 3;
+    iframe->esp_dummy = 4;
+    iframe->ebx = 5;
+    iframe->edx = 6;
+    iframe->ecx = 7;
+    iframe->eax = 8;
+
+    iframe->gs = 0;
+    iframe->ds = USER_DATA_SELECTOR;
+    iframe->es = USER_DATA_SELECTOR;
+    iframe->fs = USER_DATA_SELECTOR;
+    iframe->ss = USER_DATA_SELECTOR;
+    iframe->cs = USER_CODE_SELECTOR;
+
+    iframe->error = ONIXS_MAGIC;
+
+    uint32 stack3 = alloc_kpage(1); // todo replace to user stack
+
+    iframe->eip = (uint32)target;
+    iframe->eflags = (0 << 12 | 0b10 | 1 << 9);
+    iframe->esp = stack3 + MEMORY_PAGE_SIZE;
+
+    asm volatile(
+        "movl %0, %%esp\n"
+        "jmp interrupt_exit\n" ::"m"(iframe));
+
 }
 
 void task_init(){

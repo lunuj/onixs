@@ -7,11 +7,13 @@
 #include <onixs/clock.h>
 #include <onixs/gate.h>
 #include <onixs/keyboard.h>
+#include <onixs/global.h>
 
 void kernel_init(){
     console_clear();
     memory_map_init();
     mapping_init();
+    tss_init();
     interrupt_init();
 
     clock_init();

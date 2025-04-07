@@ -3,6 +3,7 @@
 #include <onixs/debug.h>
 #include <onixs/keyboard.h>
 #include <onixs/stdio.h>
+#include <onixs/task.h>
 
 void idle_thread()
 {
@@ -19,11 +20,27 @@ void idle_thread()
     }
 }
 
+static void real_init_thread()
+{
+    uint32 counter = 0;
+    char ch;
+    while(true)
+    {
+        // asm volatile("in $0x9,%ax\n");
+        sleep(100);
+    }
+}
+
 void init_thread()
+{
+    char temp[100];
+    task_to_user_mode(real_init_thread);
+}
+
+void test_thread()
 {
     uint32 counter = 0;
     interrupt_enable();
-
     char ch = 0;
     while(true){
         bool intr = interrupt_disable_ret();
@@ -31,15 +48,5 @@ void init_thread()
         printk("%c",ch);
         interrupt_set_state(intr);
         // sleep(500);
-    }
-}
-
-void test_thread()
-{
-    uint32 counter = 0;
-    interrupt_enable();
-    while(true){
-        // LOGK("[INFO]: test task %d\n", counter++);
-        sleep(1000);
     }
 }

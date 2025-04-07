@@ -55,6 +55,39 @@ extern void init_thread();
 extern void test_thread();
 extern void task_switch(task_t *next);
 
+
+// 中断帧
+typedef struct intr_frame_t
+{
+    uint32 vector;
+
+    uint32 edi;
+    uint32 esi;
+    uint32 ebp;
+    // 虽然 pushad 把 esp 也压入，但 esp 是不断变化的，所以会被 popad 忽略
+    uint32 esp_dummy;
+
+    uint32 ebx;
+    uint32 edx;
+    uint32 ecx;
+    uint32 eax;
+
+    uint32 gs;
+    uint32 fs;
+    uint32 es;
+    uint32 ds;
+
+    uint32 vector0;
+
+    uint32 error;
+
+    uint32 eip;
+    uint32 cs;
+    uint32 eflags;
+    uint32 esp;
+    uint32 ss;
+} intr_frame_t;
+
 void task_init();
 void schedule();
 task_t * running_task();
@@ -63,7 +96,7 @@ void task_unblock(task_t * task);
 void task_sleep(uint32 ms);
 void task_wakeup();
 void task_yield();
-
+void task_to_user_mode(target_t target);
 #endif // TASK_H
 
 
