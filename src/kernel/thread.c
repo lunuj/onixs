@@ -5,6 +5,7 @@
 #include <onixs/stdio.h>
 #include <onixs/printk.h>
 #include <onixs/task.h>
+#include <onixs/arena.h>
 
 void idle_thread()
 {
@@ -29,7 +30,7 @@ static void real_init_thread()
     {
         // asm volatile("in $0x9,%ax\n");
         sleep(100);
-        printf("task is in user mode %d\n", counter++);
+        // printf("task is in user mode %d\n", counter++);
     }
 }
 
@@ -45,10 +46,20 @@ void test_thread()
     interrupt_enable();
     char ch = 0;
     while(true){
-        bool intr = interrupt_disable_ret();
-        keyboard_read(&ch, 1);
-        printk("%c",ch);
-        interrupt_set_state(intr);
-        // sleep(500);
+        void * ptr = kmalloc(0x2000);
+        LOGK("kalloc %#p\n", ptr);
+        kfree(ptr);
+        ptr = kmalloc(1024);
+        LOGK("kalloc %#p\n", ptr);
+        kfree(ptr);
+        ptr = kmalloc(54);
+        LOGK("kalloc %#p\n", ptr);
+        kfree(ptr);
+    
+        // bool intr = interrupt_disable_ret();
+        // keyboard_read(&ch, 1);
+        // printk("%c",ch);
+        // interrupt_set_state(intr);
+        sleep(2500);
     }
 }

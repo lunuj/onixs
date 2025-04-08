@@ -8,12 +8,14 @@
 #include <onixs/gate.h>
 #include <onixs/keyboard.h>
 #include <onixs/global.h>
+#include <onixs/arena.h>
 
 void kernel_init(){
     console_clear();
     memory_map_init();
     mapping_init();
     tss_init();
+    arena_init();
     interrupt_init();
 
     clock_init();
