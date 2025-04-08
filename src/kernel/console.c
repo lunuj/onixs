@@ -91,12 +91,13 @@ void console_init()
 {
     console_clear();
 }
-void console_write(char *buf, uint32 count)
+int32 console_write(char *buf, uint32 count)
 {
     char ch;
     bool irqt = interrupt_disable_ret();
     uint16 * ptr = MEM_BASE_PTR;
-    while (count--)
+    int32 nr = 0;
+    while (nr++<count)
     {
         ch = *buf++;
         switch (ch)
@@ -132,6 +133,7 @@ void console_write(char *buf, uint32 count)
         }
     }
     interrupt_set_state(irqt);
+    return nr;
 }
 
 void console_clearline(){

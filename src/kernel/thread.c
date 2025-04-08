@@ -3,6 +3,7 @@
 #include <onixs/debug.h>
 #include <onixs/keyboard.h>
 #include <onixs/stdio.h>
+#include <onixs/printk.h>
 #include <onixs/task.h>
 
 void idle_thread()
@@ -28,6 +29,7 @@ static void real_init_thread()
     {
         // asm volatile("in $0x9,%ax\n");
         sleep(100);
+        printf("task is in user mode %d\n", counter++);
     }
 }
 
