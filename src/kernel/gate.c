@@ -2,6 +2,7 @@
 #include <onixs/syscall.h>
 #include <onixs/task.h>
 #include <onixs/console.h>
+#include <onixs/memorry.h>
 
 handler_t syscall_table[SYSCALL_SIZE];
 
@@ -18,14 +19,12 @@ static void sys_default()
 
 static uint32 sys_test(){
     // LOGK("syscall test...\n");
-    static task_t * task;
-    if(!task){
-        task = running_task();
-        task_block(task, NULL, TASK_BLOCKED);
-    }else{
-        task_unblock(task);
-        task = NULL;
-    }
+    link_page(0x1600000);
+
+    char * ptr = (char *) 0x1600000;
+    ptr[3] = 'T';
+
+    unlink_page(0x1600000);
     return 255;
 }
 

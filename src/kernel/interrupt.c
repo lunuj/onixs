@@ -5,6 +5,8 @@
 #include <onixs/stdlib.h>
 #include <onixs/assert.h>
 #include <onixs/io.h>
+#include <onixs/memorry.h>
+#include <onixs/printk.h>
 
 gate_t idt[IDT_SIZE];
 pointer_t idt_ptr;
@@ -144,7 +146,7 @@ void idt_init(){
     for(int size = 0; size < 0x20; size++){
         handler_table[size] = exception_handler;
     }
-
+    handler_table[0xe] = page_fault;
     for(int size = 0x20; size < ENTRY_SIZE; size++){
         handler_table[size] = default_handler;
     }

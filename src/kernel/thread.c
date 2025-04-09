@@ -21,14 +21,20 @@ void idle_thread()
         yield();
     }
 }
+void test_recursion()
+{
+    char tmp[400];
+    test_recursion();
+}
 
-static void real_init_thread()
+static void user_init_thread()
 {
     uint32 counter = 0;
     char ch;
     while(true)
     {
         // asm volatile("in $0x9,%ax\n");
+        test_recursion();
         sleep(100);
         // printf("task is in user mode %d\n", counter++);
     }
@@ -37,7 +43,7 @@ static void real_init_thread()
 void init_thread()
 {
     char temp[100];
-    task_to_user_mode(real_init_thread);
+    task_to_user_mode(user_init_thread);
 }
 
 void test_thread()

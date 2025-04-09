@@ -1,7 +1,9 @@
 #include <onixs/memorry.h>
 #include <onixs/multiboot2.h>
+#include <onixs/task.h>
 
 #define used_pages() (total_pages - free_pages)
+#define PDE_MASK 0xFFC00000
 
 static uint32 total_pages;
 static uint32 free_pages;
@@ -18,6 +20,15 @@ static uint32 KERNEL_PAGE_TABEL[] = {
 };
 
 bitmap_t kernel_map;
+
+/**
+ * @brief  获取造成缺页中断所访问地址
+ * @retval [uint32] 地址
+ * @note 
+ */
+uint32 get_cr2(){
+    asm volatile("movl %cr2, %eax\n");
+}
 
 /**
  * @brief  获取页目录地址
@@ -203,7 +214,7 @@ void mapping_init(){
 static uint32 get_page(){
     for(size_t i = start_page; i < total_pages; i++){
         if(!memory_map[i]){
-            memory_map[i] = i;
+            memory_map[i] = 1;
             free_pages--;
             assert(free_pages >= 0);
             uint32 page = ((uint32)i) << 12;
@@ -237,8 +248,21 @@ static page_entry_t* get_pde(){
  * 再访问页表某一项作为页地址，
  * 最后根据页内偏移为0得到页表地址
  */
-static page_entry_t* get_pte(uint32 vaddr){
-    return (page_entry_t *)(0xFFC00000 | (DIDX(vaddr)<<12));
+static page_entry_t* get_pte(uint32 vaddr, bool create){
+    page_entry_t * pde = get_pde();
+    uint32 idx = DIDX(vaddr);
+    page_entry_t * entry = &pde[idx];
+    
+    assert(create || (!create && entry->present));
+
+    page_entry_t * table = (page_entry_t *)(PDE_MASK | (idx << 12));
+    if(!entry->present){
+        LOGK("[INFO]: get and create page table entry for %#p\n", vaddr);
+        uint32 page = get_page();
+        entry_init(entry, IDX(page));
+        memset(table, 0, MEMORY_PAGE_SIZE);
+    }
+    return table;
 }
 
 static void flush_tlb(uint32 vaddr){
@@ -295,4 +319,109 @@ void free_kpage(uint32 vaddr, uint32 count){
     assert(count > 0);
     reset_page(&kernel_map, vaddr, count);
     LOGK("[INFO]: free kernel pages %#p count %d\n", vaddr, count);
+}
+
+void link_page(uint32 vaddr)
+{
+    ASSERT_PAGE(vaddr);
+
+    page_entry_t * pte = get_pte(vaddr, true);
+    page_entry_t * entry = &pte[TIDX(vaddr)];
+
+    task_t * task = running_task();
+    bitmap_t * map = task->vmap;
+    uint32 index = IDX(vaddr);
+
+    if(entry->present)
+    {
+        assert(bitmap_test(map, index));
+        return;
+    }
+
+    assert(!bitmap_test(map, index));
+    bitmap_set(map, index, true);
+
+    uint32 paddr = get_page();
+    entry_init(entry, IDX(paddr));
+    flush_tlb(vaddr);
+
+    LOGK("[INFO]: LINK from %#p to %#p\n", vaddr, paddr);
+}
+
+void unlink_page(uint32 vaddr)
+{
+    ASSERT_PAGE(vaddr);
+
+    page_entry_t * pte = get_pte(vaddr, true);
+    page_entry_t * entry = &pte[TIDX(vaddr)];
+
+    task_t * task = running_task();
+    bitmap_t * map = task->vmap;
+    uint32 index = IDX(vaddr);
+
+    if(!entry->present){
+        assert(!bitmap_test(map, index));
+        return;
+    }
+
+    assert(bitmap_test(map, index));
+    
+    entry->present = false;
+    bitmap_set(map, index, false);
+
+    uint32 paddr = PAGE(entry->index);
+
+    DEBUGK("[INFO]: unlink from %#p to %#p\n");
+    put_page(paddr);
+    flush_tlb(vaddr);
+}
+
+page_entry_t * copy_pde()
+{
+    task_t * task = running_task();
+    page_entry_t * pde = (page_entry_t *)alloc_kpage(1);
+    memcpy(pde, (void *)task->pde, MEMORY_PAGE_SIZE);
+
+    page_entry_t * entry = &pde[1023];
+    entry_init(entry, IDX(pde));
+    return pde;
+}
+
+typedef struct page_error_code_t
+{
+    uint8 present : 1;
+    uint8 write : 1;
+    uint8 user : 1;
+    uint8 reserved0 : 1;
+    uint8 fetch : 1;
+    uint8 protection : 1;
+    uint8 shadow : 1;
+    uint16 reserved1 : 8;
+    uint8 sgx : 1;
+    uint16 reserved2;
+} _packed page_error_code_t;
+
+void page_fault(
+    int vector,
+    uint32 edi, uint32 esi, uint32 ebp, uint32 esp,
+    uint32 ebx, uint32 edx, uint32 ecx, uint32 eax,
+    uint32 gs, uint32 fs, uint32 es, uint32 ds,
+    uint32 vector0, uint32 error, uint32 eip, uint32 cs, uint32 eflags)
+{
+    assert(vector = 0xe);
+    uint32 vaddr = get_cr2();
+    LOGK("fault address %#p\n",vaddr);
+
+    page_error_code_t * code = (page_error_code_t *)&error;
+    task_t * task = running_task();
+
+    assert(KERNEL_MEMORY_SIZE <= vaddr < USER_STACK_TOP);
+
+    if(!code->present && (vaddr > USER_STACK_BOTTOM))
+    {
+        uint32 page = PAGE(IDX(vaddr));
+        link_page(page);
+        return;
+    }
+    panic("page fault");
 }

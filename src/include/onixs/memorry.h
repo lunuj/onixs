@@ -18,9 +18,11 @@
 
 #define KERNEL_PAGE_DIR 0x1000              //内核页目录 大小4KB
 #define KERNEL_MAP_BITS 0x4000              //位图存放位置
-#define KERNEL_MEMORY_SIZE (0x100000 * sizeof(KERNEL_PAGE_TABEL))   //1M * 4 * 2
+#define KERNEL_MEMORY_SIZE (0x100000 * 8)   //1M * 4 * 2
 
-
+#define USER_STACK_SIZE 0x200000
+#define USER_STACK_TOP 0x8000000
+#define USER_STACK_BOTTOM (USER_STACK_TOP - USER_STACK_SIZE)
 
 #define IDX(addr) ((uint32)addr >> 12)
 #define DIDX(addr) (((uint32)addr >> 22) & 0x3FF)
@@ -49,6 +51,7 @@ typedef struct page_entry_t{
     uint32 index : 20;  // 页索引
 }_packed page_entry_t;
 
+uint32 get_cr2();
 uint32 get_cr3();
 void set_cr3(uint32 pde);
 void memory_map_init();
@@ -56,4 +59,13 @@ void mapping_init();
 uint32 alloc_kpage(uint32 count);
 void free_kpage(uint32 vaddr, uint32 count);
 
+void link_page(uint32 vaddr);
+void unlink_page(uint32 vaddr);
+page_entry_t * copy_pde();
+void page_fault(
+    int vector,
+    uint32 edi, uint32 esi, uint32 ebp, uint32 esp,
+    uint32 ebx, uint32 edx, uint32 ecx, uint32 eax,
+    uint32 gs, uint32 fs, uint32 es, uint32 ds,
+    uint32 vector0, uint32 error, uint32 eip, uint32 cs, uint32 eflags);
 #endif // MEMORRY_H

@@ -6,6 +6,7 @@
 #include <onixs/memorry.h>
 #include <onixs/interrupt.h>
 #include <onixs/syscall.h>
+#include <onixs/arena.h>
 
 extern tss_t tss;
 
@@ -68,6 +69,10 @@ task_t *running_task(){
 void task_activate(task_t * task)
 {
     assert(task->magic == ONIXS_MAGIC);
+    if(task->pde != get_cr3())
+    {
+        set_cr3(task->pde);
+    }
     if(task->uid != KERNEL_USER)
     {
         tss.esp0 = (uint32)task + MEMORY_PAGE_SIZE;
@@ -132,6 +137,13 @@ void task_to_user_mode(target_t target)
 {
     task_t * task = running_task();
 
+    task->vmap = kmalloc(sizeof(bitmap_t));
+    void * buf = (void *)alloc_kpage(1);
+    bitmap_init(task->vmap, buf, MEMORY_PAGE_SIZE, KERNEL_MEMORY_SIZE / MEMORY_PAGE_SIZE);
+
+    task->pde = (uint32)copy_pde();
+    set_cr3(task->pde);
+
     uint32 addr = (uint32)task + MEMORY_PAGE_SIZE;
 
     addr -= sizeof(intr_frame_t);
@@ -156,11 +168,9 @@ void task_to_user_mode(target_t target)
 
     iframe->error = ONIXS_MAGIC;
 
-    uint32 stack3 = alloc_kpage(1); // todo replace to user stack
-
     iframe->eip = (uint32)target;
     iframe->eflags = (0 << 12 | 0b10 | 1 << 9);
-    iframe->esp = stack3 + MEMORY_PAGE_SIZE;
+    iframe->esp = USER_STACK_TOP;
 
     asm volatile(
         "movl %0, %%esp\n"
