@@ -32,6 +32,8 @@ typedef struct task_t{
     uint32 jiffies;                 // 上次执行时全局时间片
     char name[TASK_NAME_LEN];       // 任务名
     uint32 uid;                     // 用户id
+    pid_t pid;                      // 任务 id
+    pid_t ppid;                     // 副任务 id
     uint32 pde;                     // 页目录物理地址
     struct bitmap_t * vmap;         // 进程虚拟内存位图
     uint32 brk;
@@ -98,6 +100,8 @@ void task_sleep(uint32 ms);
 void task_wakeup();
 void task_yield();
 void task_to_user_mode(target_t target);
+pid_t sys_getpid();
+pid_t sys_getppid();
 #endif // TASK_H
 
 

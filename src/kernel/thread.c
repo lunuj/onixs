@@ -28,15 +28,8 @@ static void user_init_thread()
     char ch;
     while(true)
     {
-        // asm volatile("in $0x9,%ax\n");
-        char * ptr = (char *)0x900000;
-        brk(ptr);
-
-        ptr -= 0x1000;
-        ptr[3] = 0xff;
-        brk((char *)0x800000);
-        sleep(100);
-        // printf("task is in user mode %d\n", counter++);
+        printf("init thread %d %d %d\n", getpid(), getppid(), counter++);
+        sleep(1000);
     }
 }
 
@@ -52,20 +45,11 @@ void test_thread()
     interrupt_enable();
     char ch = 0;
     while(true){
-        void * ptr = kmalloc(0x2000);
-        LOGK("kalloc %#p\n", ptr);
-        kfree(ptr);
-        ptr = kmalloc(1024);
-        LOGK("kalloc %#p\n", ptr);
-        kfree(ptr);
-        ptr = kmalloc(54);
-        LOGK("kalloc %#p\n", ptr);
-        kfree(ptr);
-    
         // bool intr = interrupt_disable_ret();
         // keyboard_read(&ch, 1);
         // printk("%c",ch);
         // interrupt_set_state(intr);
+        printf("test thread %d %d %d\n", getpid(), getppid(), counter++);
         sleep(2500);
     }
 }

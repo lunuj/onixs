@@ -39,6 +39,8 @@ void syscall_init(){
     }
     syscall_table[SYS_NR_TEST] = sys_test;
     syscall_table[SYS_NR_WRIET] = sys_write;
+    syscall_table[SYS_NR_GETPID] = sys_getpid;
+    syscall_table[SYS_NR_GETPPID] = sys_getppid;
     syscall_table[SYS_NR_BRK] = sys_brk;
     syscall_table[SYS_NR_SLEEP] = task_sleep;
     syscall_table[SYS_NR_YIELD] = task_yield;

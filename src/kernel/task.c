@@ -24,7 +24,10 @@ static task_t * task_getFreeTask(){
     for (size_t i = 0; i < TASK_NUMBER; i++)
     {
         if(task_table[i] == NULL){
-            task_table[i] = (task_t *)alloc_kpage(1);
+            task_t * task = (task_t *)alloc_kpage(1);
+            memset(task, 0, MEMORY_PAGE_SIZE);
+            task->pid = i;
+            task_table[i] = task;
             return task_table[i];
         }
     }
@@ -100,7 +103,6 @@ void schedule(){
 
 static task_t * task_create(target_t target, const char * name, uint32 priority, uint32 uid){
     task_t * task = task_getFreeTask();
-    memset(task, 0, MEMORY_PAGE_SIZE);
     uint32 stack = (uint32)task + MEMORY_PAGE_SIZE;
     stack -= sizeof(task_frame_t);
     task_frame_t *frame = (task_frame_t *)stack;
@@ -273,4 +275,16 @@ void task_wakeup()
 void task_yield()
 {
     schedule();
+}
+
+pid_t sys_getpid()
+{
+    task_t * task = running_task();
+    return task->pid;
+}
+
+pid_t sys_getppid()
+{
+    task_t * task = running_task();
+    return task->ppid;
 }
