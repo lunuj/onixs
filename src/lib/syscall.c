@@ -59,3 +59,8 @@ int32 write(fd_t fd, char * buf, uint32 len)
 {
     return _syscall3(SYS_NR_WRIET, fd, (uint32)buf, len);
 }
+
+int32 brk(void * addr)
+{
+    return _syscall1(SYS_NR_BRK, (uint32)addr);
+}

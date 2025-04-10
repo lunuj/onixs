@@ -5,7 +5,7 @@
 #include <onixs/assert.h>
 #include <onixs/debug.h>
 
-#define SYSCALL_SIZE 64
+#define SYSCALL_SIZE 256
 
 void syscall_check(uint32 nr);
 void syscall_init();

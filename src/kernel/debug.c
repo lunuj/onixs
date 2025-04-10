@@ -1,6 +1,7 @@
 #include <onixs/stdio.h>
 #include <onixs/stdarg.h>
 #include <onixs/debug.h>
+#include <onixs/printk.h>
 static char buf[1024];
 void debugk(char *file, int line, const char *fmt, ...){
     va_list args;

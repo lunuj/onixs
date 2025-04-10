@@ -19,12 +19,6 @@ static void sys_default()
 
 static uint32 sys_test(){
     // LOGK("syscall test...\n");
-    link_page(0x1600000);
-
-    char * ptr = (char *) 0x1600000;
-    ptr[3] = 'T';
-
-    unlink_page(0x1600000);
     return 255;
 }
 
@@ -45,6 +39,7 @@ void syscall_init(){
     }
     syscall_table[SYS_NR_TEST] = sys_test;
     syscall_table[SYS_NR_WRIET] = sys_write;
+    syscall_table[SYS_NR_BRK] = sys_brk;
     syscall_table[SYS_NR_SLEEP] = task_sleep;
     syscall_table[SYS_NR_YIELD] = task_yield;
 }

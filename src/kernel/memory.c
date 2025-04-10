@@ -417,11 +417,41 @@ void page_fault(
 
     assert(KERNEL_MEMORY_SIZE <= vaddr < USER_STACK_TOP);
 
-    if(!code->present && (vaddr > USER_STACK_BOTTOM))
+    if(!code->present && (vaddr >= USER_STACK_BOTTOM || vaddr < task->brk))
     {
         uint32 page = PAGE(IDX(vaddr));
         link_page(page);
         return;
     }
     panic("page fault");
+}
+
+
+int32 sys_brk(void * addr)
+{
+    LOGK("[INFO]: task brk %#p\n", addr);
+
+    uint32 brk = (uint32)addr;
+    ASSERT_PAGE(brk);
+
+    task_t * task = running_task();
+    assert(task->uid != KERNEL_USER);
+
+    assert(KERNEL_MEMORY_SIZE <= brk && brk < USER_STACK_BOTTOM);
+
+    uint32 old_brk = task->brk;
+    if(old_brk > brk)
+    {
+        for(; brk < old_brk; brk += MEMORY_PAGE_SIZE)
+        {
+            unlink_page(brk);
+        }
+    }
+    else if(IDX(brk - old_brk) > free_pages)
+    {
+        return -1;
+    }
+
+    task->brk = brk;
+    return 0;
 }

@@ -2,6 +2,7 @@
 #include <onixs/stdio.h>
 #include <onixs/stdarg.h>
 #include <onixs/types.h>
+#include <onixs/printk.h>
 static uint8 buf[1024];
 static void spin(char *name){
     printk("\n[ERROR]: spin in %s\n", name);
