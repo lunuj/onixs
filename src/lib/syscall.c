@@ -80,3 +80,8 @@ pid_t fork(){
 void exit(int status){
     _syscall1(SYS_NR_EXIT, status);
 }
+
+pid_t waitpid(pid_t pid, int * status)
+{
+    return _syscall2(SYS_NR_WAITPID, pid, (uint32)status);
+}

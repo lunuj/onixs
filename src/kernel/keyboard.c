@@ -237,7 +237,7 @@ uint32 keyboard_read(char * buf, uint32 count)
         while(fifo_empty(&fifo))
         {
             waiter = running_task();
-            task_block(waiter, NULL, TASK_WAITTING);
+            task_block(waiter, NULL, TASK_BLOCKED);
         }
         buf[nr++] = fifo_get(&fifo);
     }

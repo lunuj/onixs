@@ -38,6 +38,7 @@ typedef struct task_t{
     struct bitmap_t * vmap;         // 进程虚拟内存位图
     uint32 brk;
     int status;
+    pid_t waitpid;
     uint32 magic;                   // 内核魔术用于检测栈溢出
 } task_t;
 
@@ -105,6 +106,7 @@ pid_t sys_getpid();
 pid_t sys_getppid();
 pid_t task_fork();
 void task_exit(int status);
+pid_t task_waitpid(pid_t pid, int * status);
 #endif // TASK_H
 
 

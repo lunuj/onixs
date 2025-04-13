@@ -25,18 +25,22 @@ void idle_thread()
 static void user_init_thread()
 {
     uint32 counter = 0;
-    char ch;
+    int status;
     while(true)
     {
-        pid_t pid = fork();
         while(1){
+            pid_t pid = fork();
             if (pid){
                 printf("parent %d %d %d\n", pid, getpid(), getppid());
+                // sleep(1000);
+                pid_t child = waitpid(pid, &status);
+                printf("wait pid %d status %d %d\n", child, status, counter++);
             }else{
                 printf("child %d %d %d\n", pid, getpid(), getppid());
+                sleep(2000);
+                exit(0);
             }
-            exit(0);
-            sleep(500);
+            sleep(1000);
         }
     }
 }
