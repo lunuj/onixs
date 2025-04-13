@@ -37,6 +37,7 @@ typedef struct task_t{
     uint32 pde;                     // 页目录物理地址
     struct bitmap_t * vmap;         // 进程虚拟内存位图
     uint32 brk;
+    int status;
     uint32 magic;                   // 内核魔术用于检测栈溢出
 } task_t;
 
@@ -103,6 +104,7 @@ void task_to_user_mode(target_t target);
 pid_t sys_getpid();
 pid_t sys_getppid();
 pid_t task_fork();
+void task_exit(int status);
 #endif // TASK_H
 
 

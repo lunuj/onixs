@@ -422,6 +422,44 @@ page_entry_t * copy_pde()
     return pde;
 }
 
+void free_pde()
+{
+    task_t *task = running_task();
+    assert(task->uid != KERNEL_USER);
+
+    page_entry_t *pde = get_pde();
+
+    for (size_t didx = 2; didx < 1023; didx++)
+    {
+        page_entry_t *dentry = &pde[didx];
+        if (!dentry->present)
+        {
+            continue;
+        }
+
+        page_entry_t *pte = (page_entry_t *)(PDE_MASK | (didx << 12));
+
+        for (size_t tidx = 0; tidx < 1024; tidx++)
+        {
+            page_entry_t *entry = &pte[tidx];
+            if (!entry->present)
+            {
+                continue;
+            }
+
+            assert(memory_map[entry->index] > 0);
+            put_page(PAGE(entry->index));
+        }
+
+        // 释放页表
+        put_page(PAGE(dentry->index));
+    }
+
+    // 释放页目录
+    free_kpage(task->pde, 1);
+    LOGK("free pages %d\n", free_pages);
+}
+
 typedef struct page_error_code_t
 {
     uint8 present : 1;

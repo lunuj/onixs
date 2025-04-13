@@ -322,8 +322,12 @@ pid_t task_fork()
     children->ticks = children->priority;
     children->state = TASK_READY;
 
+    // 拷贝用户进程虚拟内存位图
+    children->vmap = kmalloc(sizeof(bitmap_t));
+    memcpy(children->vmap, task->vmap, sizeof(bitmap_t));
+
     void * buf = (void *)alloc_kpage(1);
-    memcpy(buf, task->vmap->bits, sizeof(bitmap_t));
+    memcpy(buf, task->vmap->bits, MEMORY_PAGE_SIZE);
     children->vmap->bits = buf;
 
     children->pde = (uint32)copy_pde();
@@ -331,4 +335,30 @@ pid_t task_fork()
     task_build_stack(children);
 
     return children->pid;
+}
+
+void task_exit(int status)
+{
+    task_t * task = running_task();
+    assert(task->node.next == NULL && task->node.prev == NULL && task->state == TASK_RUNNING);
+
+    task->state = TASK_DIED;
+    task->status = status;
+
+    free_pde(task->pde);
+    free_kpage((uint32)task->vmap->bits, 1);
+    kfree(task->vmap);
+
+    // 将子进程的父进程赋值为自己的父进程
+    for (size_t i = 0; i < TASK_NUMBER; i++)
+    {
+        task_t *child = task_table[i];
+        if (!child)
+            continue;
+        if (child->ppid != task->pid)
+            continue;
+        child->ppid = task->ppid;
+    }
+    LOGK("task 0x%p exit....\n", task);
+    schedule();
 }

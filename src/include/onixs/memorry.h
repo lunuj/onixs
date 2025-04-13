@@ -62,6 +62,7 @@ void free_kpage(uint32 vaddr, uint32 count);
 void link_page(uint32 vaddr);
 void unlink_page(uint32 vaddr);
 page_entry_t * copy_pde();
+void free_pde();
 void page_fault(
     int vector,
     uint32 edi, uint32 esi, uint32 ebp, uint32 esp,

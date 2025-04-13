@@ -35,6 +35,7 @@ static void user_init_thread()
             }else{
                 printf("child %d %d %d\n", pid, getpid(), getppid());
             }
+            exit(0);
             sleep(500);
         }
     }
