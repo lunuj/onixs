@@ -28,8 +28,15 @@ static void user_init_thread()
     char ch;
     while(true)
     {
-        printf("init thread %d %d %d\n", getpid(), getppid(), counter++);
-        sleep(1000);
+        pid_t pid = fork();
+        while(1){
+            if (pid){
+                printf("parent %d %d %d\n", pid, getpid(), getppid());
+            }else{
+                printf("child %d %d %d\n", pid, getpid(), getppid());
+            }
+            sleep(500);
+        }
     }
 }
 
@@ -47,9 +54,9 @@ void test_thread()
     while(true){
         // bool intr = interrupt_disable_ret();
         // keyboard_read(&ch, 1);
-        // printk("%c",ch);
+        // printk("%c",'t');
         // interrupt_set_state(intr);
         printf("test thread %d %d %d\n", getpid(), getppid(), counter++);
-        sleep(2500);
+        sleep(500);
     }
 }

@@ -288,3 +288,47 @@ pid_t sys_getppid()
     task_t * task = running_task();
     return task->ppid;
 }
+
+static void task_build_stack(task_t *task)
+{
+    uint32 addr = (uint32)task + MEMORY_PAGE_SIZE;
+    addr -= sizeof(intr_frame_t);
+    intr_frame_t *iframe = (intr_frame_t *)addr;
+    iframe->eax = 0;
+
+    addr -= sizeof(task_frame_t);
+    task_frame_t *frame = (task_frame_t *)addr;
+
+    frame->ebp = 0xaa55aa55;
+    frame->ebx = 0xaa55aa55;
+    frame->edi = 0xaa55aa55;
+    frame->esi = 0xaa55aa55;
+
+    frame->eip = interrupt_exit;
+
+    task->stack = (uint32 *)frame;
+}
+
+pid_t task_fork()
+{
+    task_t * task = running_task();
+    assert(task->node.next == NULL && task->node.prev == NULL && task->state == TASK_RUNNING);
+    task_t * children = task_getFreeTask();
+    pid_t pid = children->pid;
+    memcpy(children, task, MEMORY_PAGE_SIZE);
+
+    children->pid = pid;
+    children->ppid = task->pid;
+    children->ticks = children->priority;
+    children->state = TASK_READY;
+
+    void * buf = (void *)alloc_kpage(1);
+    memcpy(buf, task->vmap->bits, sizeof(bitmap_t));
+    children->vmap->bits = buf;
+
+    children->pde = (uint32)copy_pde();
+
+    task_build_stack(children);
+
+    return children->pid;
+}

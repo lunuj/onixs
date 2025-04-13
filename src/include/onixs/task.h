@@ -46,7 +46,7 @@ typedef struct task_frame_t
     uint32 esi;
     uint32 ebx;
     uint32 ebp;
-    uint32 (*eip)(void);
+    void (*eip)(void);
 }task_frame_t;
 
 extern uint32 volatile jiffies;
@@ -102,6 +102,7 @@ void task_yield();
 void task_to_user_mode(target_t target);
 pid_t sys_getpid();
 pid_t sys_getppid();
+pid_t task_fork();
 #endif // TASK_H
 
 
