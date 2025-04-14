@@ -9,6 +9,7 @@
 #include <onixs/keyboard.h>
 #include <onixs/global.h>
 #include <onixs/arena.h>
+#include <onixs/time.h>
 
 void kernel_init(){
     console_clear();
@@ -16,6 +17,7 @@ void kernel_init(){
     mapping_init();
     tss_init();
     arena_init();
+    time_init();
     interrupt_init();
 
     clock_init();

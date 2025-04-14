@@ -3,6 +3,7 @@
 #include <onixs/task.h>
 #include <onixs/console.h>
 #include <onixs/memorry.h>
+#include <onixs/clock.h>
 
 handler_t syscall_table[SYSCALL_SIZE];
 
@@ -31,6 +32,11 @@ static int32 sys_write(fd_t fd, char * buf, uint32 len)
     panic("write");
     return 0;
 }
+extern uint32 startup_time;
+time_t sys_time()
+{
+    return startup_time + (jiffies * JIFFY) /1000;
+}
 
 void syscall_init(){
     for (size_t i = 0; i < SYSCALL_SIZE; i++)
@@ -41,6 +47,7 @@ void syscall_init(){
     syscall_table[SYS_NR_EXIT] = task_exit;
     syscall_table[SYS_NR_WRIET] = sys_write;
     syscall_table[SYS_NR_WAITPID] = task_waitpid;
+    syscall_table[SYS_NR_TIME] = sys_time;
     syscall_table[SYS_NR_GETPID] = sys_getpid;
     syscall_table[SYS_NR_GETPPID] = sys_getppid;
     syscall_table[SYS_NR_BRK] = sys_brk;
