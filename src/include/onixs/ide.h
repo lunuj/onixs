@@ -24,6 +24,7 @@ typedef struct ide_ctrl_t
     uint16 iobase;
     ide_disk_t disk[IDE_DISK_NR];
     ide_disk_t * active;
+    struct task_t *waiter;
 } ide_ctrl_t;
 
 void ide_init();

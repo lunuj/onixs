@@ -58,9 +58,10 @@ void test_thread()
     char ch = 0;
     while(true){
         // bool intr = interrupt_disable_ret();
-        // keyboard_read(&ch, 1);
+        // keyboard_read(&ch
         // printk("%c",'t');
         // interrupt_set_state(intr);
+        test();
         printf("test thread %d %d %d\n", getpid(), getppid(), counter++);
         sleep(500);
     }

@@ -3,6 +3,8 @@
 #include <onixs/stdio.h>
 #include <onixs/memorry.h>
 #include <onixs/io.h>
+#include <onixs/interrupt.h>
+#include <onixs/task.h>
 // IDE 寄存器基址
 #define IDE_IOBASE_PRIMARY 0x1F0   // 主通道基地址
 #define IDE_IOBASE_SECONDARY 0x170 // 从通道基地址
@@ -191,6 +193,7 @@ static void ide_pio_read_sector(ide_disk_t * disk, uint16 * buf)
 void ide_pio_read(ide_disk_t * disk, void * buf, uint8 count, idx_t lba)
 {
     assert(count > 0);
+    assert(!interrupt_get_state());
     ide_ctrl_t * ctrl = disk->ctrl;
 
     lock_acquire(&ctrl->lock);
@@ -201,6 +204,12 @@ void ide_pio_read(ide_disk_t * disk, void * buf, uint8 count, idx_t lba)
 
     for(size_t i = 0; i < count; i++)
     {
+        task_t * task = running_task();
+        if(task->state == TASK_RUNNING)
+        {
+            ctrl->waiter = task;
+            task_block(task, NULL, TASK_BLOCKED);
+        }
         ide_busy_wait(ctrl, IDE_SR_DRQ);
         uint32 offset = ((uint32)buf + i * SECTOR_SIZE);
         ide_pio_read_sector(disk, (uint16 *)offset);
@@ -219,6 +228,7 @@ static void ide_pio_write_sector(ide_disk_t * disk, uint16 * buf)
 void ide_pio_write(ide_disk_t * disk, void * buf, uint8 count, idx_t lba)
 {
     assert(count > 0);
+    assert(!interrupt_get_state());
     ide_ctrl_t * ctrl = disk->ctrl;
     lock_acquire(&ctrl->lock);
 
@@ -231,11 +241,30 @@ void ide_pio_write(ide_disk_t * disk, void * buf, uint8 count, idx_t lba)
     {
         uint32 offset = ((uint32)buf + i * SECTOR_SIZE);
         ide_pio_write_sector(disk, (uint16 *)offset);
+        task_t * task = running_task();
+        if(task->state == TASK_RUNNING)
+        {
+            ctrl->waiter = task;
+            task_block(task, NULL, TASK_BLOCKED);
+        }
         ide_busy_wait(ctrl, IDE_SR_NULL);
     }
     lock_release(&ctrl->lock);
 }
 
+
+void ide_handler(int vector)
+{
+    send_eoi(vector);
+    ide_ctrl_t * ctrl = &controllers[vector - IRQ_HARDDISK - 0x20];
+    uint8 state = inb(ctrl->iobase + IDE_STATUS);
+    LOGK("[INFO]: state %d %#x", vector, state);
+    if(ctrl->waiter)
+    {
+        task_unblock(ctrl->waiter);
+        ctrl->waiter == NULL;
+    }
+}
 
 /**
  * @brief  IDE(PATA)初始化
@@ -246,12 +275,9 @@ void ide_init()
 {
     LOGK("[INFO]: init\n");
     ide_ctrl_init();
-
-    void * buf = (void *)alloc_kpage(1);
-    LOGK("[INFO]: read buf\n");
-    ide_pio_read(&controllers[0].disk[0], buf, 1, 0);
-    memset(buf, 0x5A, MEMORY_PAGE_SIZE);
-    ide_pio_write(&controllers[0].disk[0], buf, 1, 1);
-
-    free_kpage((uint32)buf, 1);
+    interrupt_register(IRQ_HARDDISK, ide_handler);
+    interrupt_register(IRQ_HARDDISK2, ide_handler);
+    interrupt_mask(IRQ_HARDDISK, true);
+    interrupt_mask(IRQ_HARDDISK2, true);
+    interrupt_mask(IRQ_CASCADE, true);
 }
