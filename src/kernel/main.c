@@ -10,6 +10,7 @@
 #include <onixs/global.h>
 #include <onixs/arena.h>
 #include <onixs/time.h>
+#include <onixs/ide.h>
 
 void kernel_init(){
     console_clear();
@@ -19,7 +20,7 @@ void kernel_init(){
     arena_init();
     time_init();
     interrupt_init();
-
+    ide_init();
     clock_init();
 
     task_init();

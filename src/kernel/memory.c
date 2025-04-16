@@ -539,9 +539,9 @@ int32 sys_brk(void * addr)
     uint32 old_brk = task->brk;
     if(old_brk > brk)
     {
-        for(; brk < old_brk; brk += MEMORY_PAGE_SIZE)
+        for(uint32 page = brk; brk < old_brk; page += MEMORY_PAGE_SIZE)
         {
-            unlink_page(brk);
+            unlink_page(page);
         }
     }
     else if(IDX(brk - old_brk) > free_pages)

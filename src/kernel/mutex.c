@@ -46,7 +46,12 @@ void mutex_unlock(mutex_t * mutex)
     interrupt_set_state(intr);
 }
 
-
+/**
+ * @brief  互斥锁初始化
+ * @param  lock 互斥锁脂针
+ * @retval 无
+ * @note
+ */
 void lock_init(lock_t * lock)
 {
     lock->holder = NULL;
