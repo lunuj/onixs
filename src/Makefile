@@ -30,6 +30,7 @@ SYSTEM_HEX	= $(BUILD_DIR)/system.hex
 SYSTEM_ISO	= $(BUILD_DIR)/system.iso
 SYSTEM_MAP	= $(BUILD_DIR)/system.map
 SYSTEM_IMG	= $(BUILD_DIR)/system.image
+DATA_IMG	= $(BUILD_DIR)/data.image
 
 CROSS_COMPILE	:= x86_64-elf-
 CC		:= $(CROSS_COMPILE)gcc
@@ -50,7 +51,7 @@ LDFLAGS := -m elf_i386 -static -T linker.ld
 DEBUG	:= -g
 INCLUDE	:= -I./$(INCLUDE_DIR)
 
-img: $(SYSTEM_IMG)
+img: $(SYSTEM_IMG) $(DATA_IMG)
 iso: $(SYSTEM_ISO)
 
 $(BOOT_BIN): $(BUILD_DIR)/%.bin: %.asm
@@ -83,11 +84,14 @@ $(SYSTEM_HEX): $(KERNEL)
 $(SYSTEM_MAP): $(KERNEL)
 	$(NM) $< | sort > $@
 
+$(DATA_IMG):
+	yes | qemu-img create -f raw $@ 32K
+
 $(SYSTEM_IMG): $(SYSTEM_BIN) $(SYSTEM_HEX) $(SYSTEM_MAP) $(BOOT_BIN)
 ifneq ($(wildcard $(IMG)),)
 else
 	$(shell mkdir -p $(dir $@))
-	yes |qemu-img create -f raw $@ 512K
+	yes | qemu-img create -f raw $@ 512K
 # yes | bximage -q -hd=16 -func=create -sectsize=512 -imgmode=flat $@
 endif
 	dd if=$(BOOT_NAME) of=$(SYSTEM_IMG) bs=512 count=1 conv=notrunc

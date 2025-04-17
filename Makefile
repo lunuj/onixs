@@ -1,6 +1,7 @@
 BUILD_DIR 	= ./build
 SRC_DIR		= ./src
 IMG			= $(BUILD_DIR)/system.image
+DATA_IMG	= $(BUILD_DIR)/data.image
 ISO			= $(BUILD_DIR)/system.iso
 
 QEMUFLAG	= -m 32M\
@@ -8,7 +9,9 @@ QEMUFLAG	= -m 32M\
 			-machine pcspk-audiodev=hda \
 			-rtc base=localtime \
 			
-QEMU_DISK	:= -boot c -drive file=$(IMG),if=ide,index=0,media=disk,format=raw
+QEMU_DISK	:= 	-boot c \
+				-drive file=$(IMG),if=ide,index=0,media=disk,format=raw \
+				-drive file=$(DATA_IMG),if=ide,index=1,media=disk,format=raw
 QEMU_CDROM	:= -boot d -cdrom $(ISO)
 QEMU_CDROM_t:= file=$(ISO),media=cdrom
 QEMU_DEBUG	:= -s -S

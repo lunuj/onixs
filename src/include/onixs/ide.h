@@ -15,6 +15,10 @@ typedef struct ide_disk_t
     struct ide_ctrl_t * ctrl;
     uint8 selector;
     bool master;
+    uint32 total_lba;
+    uint32 cylinders;
+    uint32 heads;
+    uint32 sectors;
 }ide_disk_t;
 
 typedef struct ide_ctrl_t
@@ -24,6 +28,7 @@ typedef struct ide_ctrl_t
     uint16 iobase;
     ide_disk_t disk[IDE_DISK_NR];
     ide_disk_t * active;
+    uint8 control;
     struct task_t *waiter;
 } ide_ctrl_t;
 

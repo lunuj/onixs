@@ -4,7 +4,6 @@
 #include <onixs/console.h>
 #include <onixs/memorry.h>
 #include <onixs/clock.h>
-#include <onixs/ide.h>
 
 handler_t syscall_table[SYSCALL_SIZE];
 
@@ -19,15 +18,8 @@ static void sys_default()
     panic("[ERROR]: syscall not implemented");
 }
 
-extern ide_ctrl_t controllers[2];
 static uint32 sys_test(){
     // LOGK("syscall test...\n");
-    uint16 * buf = (uint16 *)alloc_kpage(1);
-    ide_disk_t * disk = &controllers[0].disk[0];
-    ide_pio_read(disk, buf, 4, 0);
-    memset(buf, 0x5a, 512);
-    ide_pio_write(disk, buf, 1, 1);
-    free_kpage((uint32)buf, 1);
     return 255;
 }
 

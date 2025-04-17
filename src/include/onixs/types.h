@@ -4,6 +4,10 @@
 #define EOF -1
 #define EOS '\0'
 
+#define CONCAT(x, y) x##y
+#define RESERVED_TOKEN(x, y) CONCAT(x, y)
+#define RESERVED RESERVED_TOKEN(reserved, __LINE__)
+
 #define NULL ((void *)0)
 
 #define bool _Bool

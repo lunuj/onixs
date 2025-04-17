@@ -58,6 +58,42 @@
 #define IDE_LBA_MASTER 0b11100000 // 主盘 LBA
 #define IDE_LBA_SLAVE 0b11110000  // 从盘 LBA
 
+typedef struct ide_params_t
+{
+    uint16 config;                 // 0 General configuration bits
+    uint16 cylinders;              // 01 cylinders
+    uint16 RESERVED;               // 02
+    uint16 heads;                  // 03 heads
+    uint16 RESERVED[5 - 3];        // 05
+    uint16 sectors;                // 06 sectors per track
+    uint16 RESERVED[9 - 6];        // 09
+    uint8 serial[20];              // 10 ~ 19 序列号
+    uint16 RESERVED[22 - 19];      // 10 ~ 22
+    uint8 firmware[8];             // 23 ~ 26 固件版本
+    uint8 model[40];               // 27 ~ 46 模型数
+    uint8 drq_sectors;             // 47 扇区数量
+    uint8 RESERVED[3];             // 48
+    uint16 capabilities;           // 49 能力
+    uint16 RESERVED[59 - 49];      // 50 ~ 59
+    uint32 total_lba;              // 60 ~ 61
+    uint16 RESERVED;               // 62
+    uint16 mdma_mode;              // 63
+    uint8 RESERVED;                // 64
+    uint8 pio_mode;                // 64
+    uint16 RESERVED[79 - 64];      // 65 ~ 79 参见 ATA specification
+    uint16 major_version;          // 80 主版本
+    uint16 minor_version;          // 81 副版本
+    uint16 commmand_sets[87 - 81]; // 82 ~ 87 支持的命令集
+    uint16 RESERVED[118 - 87];     // 88 ~ 118
+    uint16 support_settings;       // 119
+    uint16 enable_settings;        // 120
+    uint16 RESERVED[221 - 120];    // 221
+    uint16 transport_major;        // 222
+    uint16 transport_minor;        // 223
+    uint16 RESERVED[254 - 223];    // 254
+    uint16 integrity;              // 校验和
+} _packed ide_params_t;
+
 ide_ctrl_t controllers[IDE_CTRL_NR];
 
 /**
@@ -89,60 +125,6 @@ static uint32 ide_error(ide_ctrl_t *ctrl)
 }
 
 /**
- * @brief  初始化IDE（PATA）控制器
- * @retval 无
- * @note 
- */
-static void ide_ctrl_init()
-{
-    for(size_t cidx = 0; cidx < IDE_CTRL_NR; cidx++)
-    {
-        ide_ctrl_t * ctrl = & controllers[cidx];
-        sprintf(ctrl->name, "cidx%d", cidx);
-        lock_init(&ctrl->lock);
-        ctrl->active = NULL;
-
-        if(cidx)
-        {
-            ctrl->iobase = IDE_IOBASE_SECONDARY;
-        }
-        else
-        {
-            ctrl->iobase = IDE_IOBASE_PRIMARY;
-        }
-
-        for(size_t didx = 0; didx < IDE_DISK_NR; didx++)
-        {
-            ide_disk_t * disk = & ctrl->disk[didx];
-            sprintf(disk->name, "hd%c", 'a'+cidx*2+didx);
-            disk->ctrl = ctrl;
-            if(didx)
-            {
-                disk->master = false;
-                disk->selector = IDE_LBA_SLAVE;
-            }
-            else
-            {
-                disk->master = true;
-                disk->selector = IDE_LBA_MASTER;
-            }
-        }
-    }
-}
-
-/**
- * @brief  控制器选择硬盘disk
- * @param  *disk 硬盘
- * @retval 无
- * @note 
- */
-static void ide_select_drive(ide_disk_t *disk)
-{
-    outb(disk->ctrl->iobase + IDE_HDDEVSEL, disk->selector);
-    disk->ctrl->active = disk;
-}
-
-/**
  * @brief  等待ctrl控制器的mask状态
  * @param  *ctrl 控制
  * @param  mask 状态
@@ -163,6 +145,18 @@ static void ide_busy_wait(ide_ctrl_t * ctrl, uint8 mask)
     }
 }
 
+/**
+ * @brief  控制器选择硬盘disk
+ * @param  *disk 硬盘
+ * @retval 无
+ * @note 
+ */
+static void ide_select_drive(ide_disk_t *disk)
+{
+    outb(disk->ctrl->iobase + IDE_HDDEVSEL, disk->selector);
+    disk->ctrl->active = disk;
+}
+
 static void ide_select_sector(ide_disk_t *disk, uint32 lba, uint8 count)
 {
     outb(disk->ctrl->iobase + IDE_FEATURE, 0);
@@ -173,12 +167,114 @@ static void ide_select_sector(ide_disk_t *disk, uint32 lba, uint8 count)
     outb(disk->ctrl->iobase + IDE_HDDEVSEL, ((lba >> 24) & 0xF) | disk->selector);
 }
 
+static void ide_reset_control(ide_ctrl_t * ctrl)
+{
+    outb(ctrl->iobase + IDE_CONTROL, IDE_CTRL_SRST);
+    ide_busy_wait(ctrl, IDE_SR_NULL);
+    outb(ctrl->iobase + IDE_CONTROL, ctrl->control);
+    ide_busy_wait(ctrl, IDE_SR_NULL);
+}
+
 static void ide_pio_read_sector(ide_disk_t * disk, uint16 * buf)
 {
     for(size_t i = 0; i < (SECTOR_SIZE / 2); i++)
     {
         buf[i] = inw(disk->ctrl->iobase + IDE_DATA);
     }
+}
+
+static void ide_swap_pairs(char *buf, uint32 len)
+{
+    for(size_t i = 0; i < len; i+=2)
+    {
+        char tmp = buf[i];
+        buf[i] = buf[i+1];
+        buf[i + 1] = tmp;
+    }
+    buf[len - 1] = '\0';
+}
+
+static uint32 ide_identify(ide_disk_t * disk, uint16 * buf)
+{
+    lock_acquire(&disk->ctrl->lock);
+    ide_select_drive(disk);
+
+    outb(disk->ctrl->iobase + IDE_COMMAND, IDE_CMD_IDENTIFY);
+    ide_busy_wait(disk->ctrl, IDE_SR_NULL);
+    ide_params_t * params = (ide_params_t *)buf;
+    ide_pio_read_sector(disk, buf);
+    LOGK("[INFO]: disk %s total lba %d\n", disk->name, params->total_lba);
+
+    uint32 ret = EOF;
+    if(params->total_lba == 0)
+    {
+        goto rollback;
+    }
+
+    ide_swap_pairs(params->serial, sizeof(params->serial));
+    LOGK("[INFO]: disk %s total lba %s\n", disk->name, params->serial);
+
+    ide_swap_pairs(params->firmware, sizeof(params->firmware));
+    LOGK("[INFO]: disk %s firware %s\n", disk->name, params->firmware);
+
+    ide_swap_pairs(params->model, sizeof(params->model));
+    LOGK("[INFO]: disk %s model %s\n", disk->name, params->model);
+
+    disk->total_lba = params->total_lba;
+    disk->cylinders = params->cylinders;
+    disk->heads = params->heads;
+    disk->sectors = params->sectors;
+    ret = 0;
+rollback:
+    lock_release(&disk->ctrl->lock);
+    return ret;
+}
+
+/**
+ * @brief  初始化IDE（PATA）控制器
+ * @retval 无
+ * @note 
+ */
+static void ide_ctrl_init()
+{
+    uint16* buf = (uint16 *)alloc_kpage(1);
+    for(size_t cidx = 0; cidx < IDE_CTRL_NR; cidx++)
+    {
+        ide_ctrl_t * ctrl = & controllers[cidx];
+        sprintf(ctrl->name, "cidx%d", cidx);
+        lock_init(&ctrl->lock);
+        ctrl->active = NULL;
+        ctrl->waiter = NULL;
+
+        if(cidx)
+        {
+            ctrl->iobase = IDE_IOBASE_SECONDARY;
+        }
+        else
+        {
+            ctrl->iobase = IDE_IOBASE_PRIMARY;
+        }
+
+        ctrl->control = inb(ctrl->iobase + IDE_CONTROL);
+        for(size_t didx = 0; didx < IDE_DISK_NR; didx++)
+        {
+            ide_disk_t * disk = & ctrl->disk[didx];
+            sprintf(disk->name, "hd%c", 'a'+cidx*2+didx);
+            disk->ctrl = ctrl;
+            if(didx)
+            {
+                disk->master = false;
+                disk->selector = IDE_LBA_SLAVE;
+            }
+            else
+            {
+                disk->master = true;
+                disk->selector = IDE_LBA_MASTER;
+            }
+            ide_identify(disk, buf);
+        }
+    }
+    free_kpage((uint32)buf, 1);
 }
 
 /**
