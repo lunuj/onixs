@@ -58,6 +58,16 @@
 #define IDE_LBA_MASTER 0b11100000 // 主盘 LBA
 #define IDE_LBA_SLAVE 0b11110000  // 从盘 LBA
 
+// 分区文件系统
+// 参考 https://www.win.tue.nl/~aeb/partitions/partition_types-1.html
+typedef enum PART_FS
+{
+    PART_FS_FAT12 = 1,    // FAT12
+    PART_FS_EXTENDED = 5, // 扩展分区
+    PART_FS_MINIX = 0x80, // minux
+    PART_FS_LINUX = 0x83, // linux
+} PART_FS;
+
 typedef struct ide_params_t
 {
     uint16 config;                 // 0 General configuration bits
@@ -231,6 +241,152 @@ rollback:
 }
 
 /**
+ * @brief  从disk中的lba块读取count个扇区到buf中
+ * @param  disk 要读取的硬盘
+ * @param  buf 存储读取数据的缓冲
+ * @param  count 读取扇区的数量
+ * @param  lba 逻辑块地址
+ * @retval int 
+ * @note 
+ */
+int ide_pio_read(ide_disk_t * disk, void * buf, uint8 count, idx_t lba)
+{
+    assert(count > 0);
+    assert(!interrupt_get_state());
+    ide_ctrl_t * ctrl = disk->ctrl;
+
+    lock_acquire(&ctrl->lock);
+    ide_select_drive(disk);
+    ide_busy_wait(ctrl, IDE_SR_DRDY);
+    ide_select_sector(disk, lba, count);
+    outb(ctrl->iobase + IDE_COMMAND, IDE_CMD_READ);
+
+    for(size_t i = 0; i < count; i++)
+    {
+        task_t * task = running_task();
+        if(task->state == TASK_RUNNING)
+        {
+            ctrl->waiter = task;
+            task_block(task, NULL, TASK_BLOCKED);
+        }
+        ide_busy_wait(ctrl, IDE_SR_DRQ);
+        uint32 offset = ((uint32)buf + i * SECTOR_SIZE);
+        ide_pio_read_sector(disk, (uint16 *)offset);
+    }
+    lock_release(&ctrl->lock);
+    return 0;
+}
+
+int ide_pio_part_read(ide_part_t *part, void *buf, uint8 count, idx_t lba)
+{
+    return ide_pio_read(part->disk, buf, count, part->start + lba);
+}
+
+static void ide_pio_write_sector(ide_disk_t * disk, uint16 * buf)
+{
+    for(size_t i = 0; i < (SECTOR_SIZE / 2); i++)
+    {
+        outw(disk->ctrl->iobase + IDE_DATA, buf[i]);
+    }
+}
+
+int ide_pio_write(ide_disk_t * disk, void * buf, uint8 count, idx_t lba)
+{
+    assert(count > 0);
+    assert(!interrupt_get_state());
+    ide_ctrl_t * ctrl = disk->ctrl;
+    lock_acquire(&ctrl->lock);
+
+    ide_select_drive(disk);
+    ide_busy_wait(ctrl, IDE_SR_DRDY);
+    ide_select_sector(disk, lba, count);
+
+    outw(ctrl->iobase + IDE_COMMAND, IDE_CMD_WRITE);
+    for(size_t i = 0; i < count;i++)
+    {
+        uint32 offset = ((uint32)buf + i * SECTOR_SIZE);
+        ide_pio_write_sector(disk, (uint16 *)offset);
+        task_t * task = running_task();
+        if(task->state == TASK_RUNNING)
+        {
+            ctrl->waiter = task;
+            task_block(task, NULL, TASK_BLOCKED);
+        }
+        ide_busy_wait(ctrl, IDE_SR_NULL);
+    }
+    lock_release(&ctrl->lock);
+    return 0;
+}
+
+int ide_pio_part_write(ide_part_t *part, void *buf, uint8 count, idx_t lba)
+{
+    return ide_pio_write(part->disk, buf, count, part->start + lba);
+}
+
+void ide_handler(int vector)
+{
+    send_eoi(vector);
+    ide_ctrl_t * ctrl = &controllers[vector - IRQ_HARDDISK - 0x20];
+    uint8 state = inb(ctrl->iobase + IDE_STATUS);
+    LOGK("[INFO]: state %d %#x", vector, state);
+    if(ctrl->waiter)
+    {
+        task_unblock(ctrl->waiter);
+        ctrl->waiter == NULL;
+    }
+}
+
+static void ide_part_init(ide_disk_t *disk, uint16 *buf)
+{
+    if(!disk->total_lba)
+        return;
+    ide_pio_read(disk,buf, 1, 0);
+    boot_sector_t *boot = (boot_sector_t *)buf;
+
+    for(size_t i = 0; i < IDE_PART_NR; i++)
+    {
+        part_entry_t *entry = &boot->entry[i];
+        ide_part_t *part = &disk->parts[i];
+        if(!entry->count)
+            continue;
+        
+        sprintf(part->name, "%s%d", disk->name, i+1);
+
+        LOGK("part %s \n", part->name);
+        LOGK("    bootable %d\n", entry->bootable);
+        LOGK("    start %d\n", entry->start);
+        LOGK("    count %d\n", entry->count);
+        LOGK("    system %#x\n", entry->system);
+
+        part->disk = disk;
+        part->count = entry->count;
+        part->system = entry->system;
+        part->start = entry->start;
+
+        if(entry->system == PART_FS_EXTENDED)
+        {
+            LOGK("[INFO]: unsupported extended partition\n");
+
+            boot_sector_t *eboot = (boot_sector_t *)(buf + SECTOR_SIZE);
+            ide_pio_read(disk, (void *)eboot, 1, entry->start);
+
+            for(size_t j = 0; j < IDE_PART_NR; j++)
+            {
+                part_entry_t *eentry = &eboot->entry[j];
+                if(!eentry->count)
+                    continue;
+                LOGK("part %s \n", part->name);
+                LOGK("    bootable %d\n", entry->bootable);
+                LOGK("    start %d\n", entry->start);
+                LOGK("    count %d\n", entry->count);
+                LOGK("    system %#x\n", entry->system);
+            }
+        }
+    }
+}
+
+
+/**
  * @brief  初始化IDE（PATA）控制器
  * @retval 无
  * @note 
@@ -272,94 +428,10 @@ static void ide_ctrl_init()
                 disk->selector = IDE_LBA_MASTER;
             }
             ide_identify(disk, buf);
+            ide_part_init(disk, buf);
         }
     }
     free_kpage((uint32)buf, 1);
-}
-
-/**
- * @brief  从disk中的lba块读取count个扇区到buf中
- * @param  disk 要读取的硬盘
- * @param  buf 存储读取数据的缓冲
- * @param  count 读取扇区的数量
- * @param  lba 逻辑块地址
- * @retval 无
- * @note 
- */
-void ide_pio_read(ide_disk_t * disk, void * buf, uint8 count, idx_t lba)
-{
-    assert(count > 0);
-    assert(!interrupt_get_state());
-    ide_ctrl_t * ctrl = disk->ctrl;
-
-    lock_acquire(&ctrl->lock);
-    ide_select_drive(disk);
-    ide_busy_wait(ctrl, IDE_SR_DRDY);
-    ide_select_sector(disk, lba, count);
-    outb(ctrl->iobase + IDE_COMMAND, IDE_CMD_READ);
-
-    for(size_t i = 0; i < count; i++)
-    {
-        task_t * task = running_task();
-        if(task->state == TASK_RUNNING)
-        {
-            ctrl->waiter = task;
-            task_block(task, NULL, TASK_BLOCKED);
-        }
-        ide_busy_wait(ctrl, IDE_SR_DRQ);
-        uint32 offset = ((uint32)buf + i * SECTOR_SIZE);
-        ide_pio_read_sector(disk, (uint16 *)offset);
-    }
-    lock_release(&ctrl->lock);
-}
-
-static void ide_pio_write_sector(ide_disk_t * disk, uint16 * buf)
-{
-    for(size_t i = 0; i < (SECTOR_SIZE / 2); i++)
-    {
-        outw(disk->ctrl->iobase + IDE_DATA, buf[i]);
-    }
-}
-
-void ide_pio_write(ide_disk_t * disk, void * buf, uint8 count, idx_t lba)
-{
-    assert(count > 0);
-    assert(!interrupt_get_state());
-    ide_ctrl_t * ctrl = disk->ctrl;
-    lock_acquire(&ctrl->lock);
-
-    ide_select_drive(disk);
-    ide_busy_wait(ctrl, IDE_SR_DRDY);
-    ide_select_sector(disk, lba, count);
-
-    outw(ctrl->iobase + IDE_COMMAND, IDE_CMD_WRITE);
-    for(size_t i = 0; i < count;i++)
-    {
-        uint32 offset = ((uint32)buf + i * SECTOR_SIZE);
-        ide_pio_write_sector(disk, (uint16 *)offset);
-        task_t * task = running_task();
-        if(task->state == TASK_RUNNING)
-        {
-            ctrl->waiter = task;
-            task_block(task, NULL, TASK_BLOCKED);
-        }
-        ide_busy_wait(ctrl, IDE_SR_NULL);
-    }
-    lock_release(&ctrl->lock);
-}
-
-
-void ide_handler(int vector)
-{
-    send_eoi(vector);
-    ide_ctrl_t * ctrl = &controllers[vector - IRQ_HARDDISK - 0x20];
-    uint8 state = inb(ctrl->iobase + IDE_STATUS);
-    LOGK("[INFO]: state %d %#x", vector, state);
-    if(ctrl->waiter)
-    {
-        task_unblock(ctrl->waiter);
-        ctrl->waiter == NULL;
-    }
 }
 
 /**
