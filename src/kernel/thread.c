@@ -6,6 +6,7 @@
 #include <onixs/printk.h>
 #include <onixs/task.h>
 #include <onixs/arena.h>
+#include <onixs/device.h>
 
 void idle_thread()
 {
@@ -57,10 +58,6 @@ void test_thread()
     interrupt_enable();
     char ch = 0;
     while(true){
-        // bool intr = interrupt_disable_ret();
-        // keyboard_read(&ch
-        // printk("%c",'t');
-        // interrupt_set_state(intr);
         test();
         printf("test thread %d %d %d\n", getpid(), getppid(), counter++);
         sleep(500);

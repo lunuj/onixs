@@ -37,7 +37,7 @@
 #define CRT_ATTR 0x07
 
 void console_init();
-int32 console_write(char * buf, uint32 count);
+int32 console_write(void *dev, char * buf, uint32 count);
 void console_clearline();
 void console_clear();
 

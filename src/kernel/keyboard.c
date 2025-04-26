@@ -2,6 +2,7 @@
 #include <onixs/mutex.h>
 #include <onixs/task.h>
 #include <onixs/fifo.h>
+#include <onixs/device.h>
 
 #define BUFFER_SIZE 64
 
@@ -228,7 +229,7 @@ void keyboard_handler(int vector)
     }
 }
 
-uint32 keyboard_read(char * buf, uint32 count)
+uint32 keyboard_read(void *dev, char * buf, uint32 count)
 {
     lock_acquire(&lock);
     int nr = 0;
@@ -259,4 +260,8 @@ void keyboard_init()
     keyboard_setled();
     interrupt_register(IRQ_KEYBOARD, keyboard_handler);
     interrupt_mask(IRQ_KEYBOARD, true);
+    device_install(
+        DEV_CHAR, DEV_KEYBOARD,
+        NULL, "keyboard", 0,
+        NULL, keyboard_read, NULL);
 }

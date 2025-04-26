@@ -4,6 +4,7 @@
 #include <onixs/console.h>
 #include <onixs/memorry.h>
 #include <onixs/clock.h>
+#include <onixs/device.h>
 
 handler_t syscall_table[SYSCALL_SIZE];
 
@@ -20,6 +21,14 @@ static void sys_default()
 
 static uint32 sys_test(){
     // LOGK("syscall test...\n");
+    char pid;
+    device_t *device = device_find(DEV_KEYBOARD, 0);
+    assert(device);
+    device_read(device->dev, &pid, 1, 0, 0);
+
+    device = device_find(DEV_CONSOLE, 0);
+    assert(device);
+    device_write(device->dev, &pid, 1, 0, 0);
     return 255;
 }
 
@@ -27,7 +36,7 @@ static int32 sys_write(fd_t fd, char * buf, uint32 len)
 {
     if(fd == stdout || fd == stderr)
     {
-        return console_write(buf, len);
+        return console_write(NULL, buf, len);
     }
     panic("write");
     return 0;

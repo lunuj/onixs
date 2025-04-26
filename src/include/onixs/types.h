@@ -31,6 +31,7 @@ typedef unsigned long long uint64;
 
 typedef uint32 time_t;
 typedef uint32 idx_t;
+typedef uint32 dev_t;
 
 typedef int32 fd_t;
 typedef int32 pid_t;

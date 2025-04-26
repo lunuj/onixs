@@ -2,6 +2,7 @@
 #include <onixs/io.h>
 #include <onixs/string.h>
 #include <onixs/interrupt.h>
+#include <onixs/device.h>
 
 static uint32 screen;
 static uint32 cursor;
@@ -87,11 +88,7 @@ static void command_lf(){
     scroll_up(1);
 }
 
-void console_init()
-{
-    console_clear();
-}
-int32 console_write(char *buf, uint32 count)
+int32 console_write(void *dev, char *buf, uint32 count)
 {
     char ch;
     bool irqt = interrupt_disable_ret();
@@ -156,4 +153,13 @@ void console_clear()
     {
         *ptr++ = CRT_BLOCK & 0x00FF | (CRT_ATTR << 8);
     }
+}
+
+void console_init()
+{
+    console_clear();
+    device_install(
+        DEV_CHAR, DEV_CONSOLE,
+        NULL, "console", 0,
+        NULL, NULL, console_write);
 }

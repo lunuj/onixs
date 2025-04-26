@@ -20,6 +20,7 @@ code_selector equ (1 << 3)
 data_selector equ (2 << 3)
 
 extern gdt_ptr
+extern device_init
 extern console_init
 extern gdt_init
 extern memory_init
@@ -30,6 +31,7 @@ section .start
 _start:
     push ebx; ards_count
     push eax; magic
+    call device_init   ; 初始化控制台
     call console_init   ; 初始化控制台
     call gdt_init       ; 全局描述符初始化
     lgdt [gdt_ptr]
