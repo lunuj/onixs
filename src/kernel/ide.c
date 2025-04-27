@@ -5,6 +5,7 @@
 #include <onixs/io.h>
 #include <onixs/interrupt.h>
 #include <onixs/task.h>
+#include <onixs/device.h>
 // IDE 寄存器基址
 #define IDE_IOBASE_PRIMARY 0x1F0   // 主通道基地址
 #define IDE_IOBASE_SECONDARY 0x170 // 从通道基地址
@@ -312,6 +313,8 @@ int ide_pio_write(ide_disk_t * disk, void * buf, uint8 count, idx_t lba)
             ctrl->waiter = task;
             task_block(task, NULL, TASK_BLOCKED);
         }
+        LOGK("write sector wait 1s, pid %d\n", task->pid);
+        task_sleep(500);
         ide_busy_wait(ctrl, IDE_SR_NULL);
     }
     lock_release(&ctrl->lock);
@@ -385,6 +388,21 @@ static void ide_part_init(ide_disk_t *disk, uint16 *buf)
     }
 }
 
+// 磁盘控制
+int ide_pio_ioctl(ide_disk_t *disk, int cmd, void *args, int flags)
+{
+    switch (cmd)
+    {
+    case DEV_CMD_SECTOR_START:
+        return 0;
+    case DEV_CMD_SECTOR_COUNT:
+        return disk->total_lba;
+    default:
+        panic("device command %d can't recognize!!!", cmd);
+        break;
+    }
+}
+
 
 /**
  * @brief  初始化IDE（PATA）控制器
@@ -434,6 +452,47 @@ static void ide_ctrl_init()
     free_kpage((uint32)buf, 1);
 }
 
+// 分区控制
+int ide_pio_part_ioctl(ide_part_t *part, int cmd, void *args, int flags)
+{
+    switch (cmd)
+    {
+    case DEV_CMD_SECTOR_START:
+        return part->start;
+    case DEV_CMD_SECTOR_COUNT:
+        return part->count;
+    default:
+        panic("device command %d can't recognize!!!", cmd);
+        break;
+    }
+}
+
+static void ide_install()
+{
+    for (size_t cidx = 0; cidx < IDE_CTRL_NR; cidx++)
+    {
+        ide_ctrl_t *ctrl = &controllers[cidx];
+        for (size_t didx = 0; didx < IDE_DISK_NR; didx++)
+        {
+            ide_disk_t *disk = &ctrl->disk[didx];
+            if (!disk->total_lba)
+                continue;
+            dev_t dev = device_install(
+                DEV_BLOCK, DEV_IDE_DISK, disk, disk->name, 0,
+                ide_pio_ioctl, ide_pio_read, ide_pio_write);
+            for (size_t i = 0; i < IDE_PART_NR; i++)
+            {
+                ide_part_t *part = &disk->parts[i];
+                if (!part->count)
+                    continue;
+                device_install(
+                    DEV_BLOCK, DEV_IDE_PART, part, part->name, dev,
+                    ide_pio_part_ioctl, ide_pio_part_read, ide_pio_part_write);
+            }
+        }
+    }
+}
+
 /**
  * @brief  IDE(PATA)初始化
  * @retval 
@@ -443,6 +502,7 @@ void ide_init()
 {
     LOGK("[INFO]: init\n");
     ide_ctrl_init();
+    ide_install(); // 安装设备
     interrupt_register(IRQ_HARDDISK, ide_handler);
     interrupt_register(IRQ_HARDDISK2, ide_handler);
     interrupt_mask(IRQ_HARDDISK, true);

@@ -20,9 +20,9 @@ void kernel_init(){
     arena_init();
     time_init();
     interrupt_init();
-    ide_init();
     clock_init();
 
+    ide_init();
     task_init();
     syscall_init();
     keyboard_init();

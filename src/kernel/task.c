@@ -188,6 +188,8 @@ void task_init(){
     idle_task = task_create(idle_thread, "idle", 1, KERNEL_USER);
     task_create(init_thread, "init", 5, NORMAL_USER);
     task_create(test_thread, "test", 5, NORMAL_USER);
+    task_create(test_thread, "test", 5, NORMAL_USER);
+    task_create(test_thread, "test", 5, NORMAL_USER);
 }
 
 void task_block(task_t * task, list_t * blist, task_state_t state)

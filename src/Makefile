@@ -91,7 +91,7 @@ $(SYSTEM_IMG): $(SYSTEM_BIN) $(SYSTEM_HEX) $(SYSTEM_MAP) $(BOOT_BIN)
 ifneq ($(wildcard $(IMG)),)
 else
 	$(shell mkdir -p $(dir $@))
-	yes | qemu-img create -f raw $@ 512K
+	yes | qemu-img create -f raw $@ 16M
 # yes | bximage -q -hd=16 -func=create -sectsize=512 -imgmode=flat $@
 endif
 	dd if=$(BOOT_NAME) of=$(SYSTEM_IMG) bs=512 count=1 conv=notrunc

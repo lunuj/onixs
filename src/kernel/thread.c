@@ -30,6 +30,7 @@ static void user_init_thread()
     while(true)
     {
         while(1){
+#if 0
             pid_t pid = fork();
             if (pid){
                 printf("parent %d %d %d\n", pid, getpid(), getppid());
@@ -41,6 +42,7 @@ static void user_init_thread()
                 sleep(2000);
                 exit(0);
             }
+#endif
             sleep(1000);
         }
     }
@@ -57,9 +59,9 @@ void test_thread()
     uint32 counter = 0;
     interrupt_enable();
     char ch = 0;
+    test();
+    LOGK("test finished of task %d\n", getpid());
     while(true){
-        test();
-        printf("test thread %d %d %d\n", getpid(), getppid(), counter++);
         sleep(500);
     }
 }

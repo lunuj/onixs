@@ -2,6 +2,8 @@
 #include <onixs/debug.h>
 #include <onixs/assert.h>
 #include <onixs/string.h>
+#include <onixs/arena.h>
+#include <onixs/task.h>
 
 #define DEVICE_NR 64
 
@@ -89,6 +91,7 @@ dev_t device_install(
     device->ioctl = ioctl;
     device->read = read;
     device->write = write;
+    list_init(&device->request_list);
     return device->dev;
 }
 
@@ -105,4 +108,70 @@ device_t *device_find(int subtype, idx_t idx)
         nr++;
     }
     return NULL;
+}
+
+// 执行块设备请求
+static void do_request(request_t *req)
+{
+    switch (req->type)
+    {
+    case REQ_READ:
+        device_read(req->dev, req->buf, req->count, req->idx, req->flags);
+        break;
+    case REQ_WRITE:
+        device_write(req->dev, req->buf, req->count, req->idx, req->flags);
+        break;
+    default:
+        panic("req type %d unknown!!!");
+        break;
+    }
+}
+
+// 块设备请求
+void device_request(dev_t dev, void *buf, uint8 count, idx_t idx, int flags, uint32 type)
+{
+    device_t *device = device_get(dev);
+    assert(device->type = DEV_BLOCK); // 是块设备
+    idx_t offset = idx + device_ioctl(device->dev, DEV_CMD_SECTOR_START, 0, 0);
+
+    if (device->parent)
+    {
+        device = device_get(device->parent);
+    }
+
+    request_t *req = kmalloc(sizeof(request_t));
+
+    req->dev = dev;
+    req->buf = buf;
+    req->count = count;
+    req->idx = offset;
+    req->flags = flags;
+    req->type = type;
+    req->task = NULL;
+
+    // 判断列表是否为空
+    bool empty = list_empty(&device->request_list);
+
+    // 将请求压入链表
+    list_push(&device->request_list, &req->node);
+
+    // 如果列表不为空，则阻塞，因为已经有请求在处理了，等待处理完成；
+    if (!empty)
+    {
+        req->task = running_task();
+        task_block(req->task, NULL, TASK_BLOCKED);
+    }
+
+    do_request(req);
+
+    list_remove(&req->node);
+    kfree(req);
+
+    if (!list_empty(&device->request_list))
+    {
+        // 先来先服务
+        request_t *nextreq = element_entry(request_t, node, device->request_list.tail.prev);
+        assert(nextreq->task->magic == ONIXS_MAGIC);
+        task_unblock(nextreq->task);
+    }
 }
