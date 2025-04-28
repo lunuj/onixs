@@ -6,6 +6,9 @@
 
 #define DEVICE_NAME_LEN 16
 
+#define DIRECT_UP 0   // 上楼
+#define DIRECT_DOWN 1 // 下楼
+
 enum device_type_t
 {
     DEV_NULL,
@@ -53,6 +56,7 @@ typedef struct device_t
     dev_t parent;
     void *ptr;
     list_t request_list; // 块设备请求链表
+    bool direct;         // 磁盘寻道方向
     int (*ioctl)(void *dev, int cmd, void *args, int flags);
     int (*read)(void *dev, void *buf, size_t count ,idx_t ide, int flags);
     int (*write)(void *dev, void *buf, size_t count ,idx_t ide, int flags);

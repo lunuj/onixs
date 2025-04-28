@@ -187,9 +187,9 @@ void task_init(){
     task_setup();
     idle_task = task_create(idle_thread, "idle", 1, KERNEL_USER);
     task_create(init_thread, "init", 5, NORMAL_USER);
-    task_create(test_thread, "test", 5, NORMAL_USER);
-    task_create(test_thread, "test", 5, NORMAL_USER);
-    task_create(test_thread, "test", 5, NORMAL_USER);
+    task_create(test_thread, "test", 5, 1);
+    task_create(test_thread, "test", 5, 5);
+    task_create(test_thread, "test", 5, 3);
 }
 
 void task_block(task_t * task, list_t * blist, task_state_t state)
@@ -233,24 +233,7 @@ void task_sleep(uint32 ms)
     task_t * current = running_task();
     current->ticks = jiffies + ticks;
 
-    list_t * list = &sleep_list;
-    list_node_t * anchor = &list->tail;
-
-    for (list_node_t * ptr = list->head.next;ptr != NULL; ptr = ptr->next)
-    {
-        task_t * task = element_entry(task_t, node, ptr);
-
-        if(task->ticks > current->ticks){
-            anchor = ptr;
-            break;
-        }
-    }
-
-    assert(current->node.prev == NULL);
-    assert(current->node.next == NULL);
-
-    list_insert_before(anchor, &current->node);
-
+    list_insert_sort(&sleep_list, &current->node, element_node_offset(task_t, node, ticks));
     current->state = TASK_SLEEPING;
 
     schedule();
