@@ -11,6 +11,7 @@
 #include <onixs/arena.h>
 #include <onixs/time.h>
 #include <onixs/ide.h>
+#include <onixs/buffer.h>
 
 void kernel_init(){
     console_clear();
@@ -19,6 +20,7 @@ void kernel_init(){
     tss_init();
     arena_init();
     time_init();
+    buffer_init();
     interrupt_init();
     clock_init();
 

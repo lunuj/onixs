@@ -314,7 +314,6 @@ int ide_pio_write(ide_disk_t * disk, void * buf, uint8 count, idx_t lba)
             task_block(task, NULL, TASK_BLOCKED);
         }
         LOGK("write sector wait 1s, pid %d\n", task->pid);
-        task_sleep(500);
         ide_busy_wait(ctrl, IDE_SR_NULL);
     }
     lock_release(&ctrl->lock);

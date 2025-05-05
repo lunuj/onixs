@@ -94,7 +94,7 @@ else
 	yes | qemu-img create -f raw $@ 16M
 # yes | bximage -q -hd=16 -func=create -sectsize=512 -imgmode=flat $@
 endif
-	dd if=$(BOOT_NAME) of=$(SYSTEM_IMG) bs=432 count=1 conv=notrunc
+	dd if=$(BOOT_NAME) of=$(SYSTEM_IMG) bs=512 count=1 conv=notrunc
 	dd if=$(LOADER_NAME) of=$(SYSTEM_IMG) bs=512 count=4 seek=2 conv=notrunc
 	test -n "$$(find $(SYSTEM_BIN) -size -100k)"
 	dd if=$(SYSTEM_BIN) of=$(SYSTEM_IMG) bs=512 count=200 seek=10 conv=notrunc

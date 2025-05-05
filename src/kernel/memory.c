@@ -14,9 +14,11 @@ static uint32 start_page = 0;
 static uint8 *memory_map;
 static uint32 memory_map_pages;
 
-static uint32 KERNEL_PAGE_TABEL[] = {
+static uint32 KERNEL_PAGE_TABLE[] = {
     0x2000,
     0x3000,
+    0x4000,
+    0x5000
 };
 
 bitmap_t kernel_map;
@@ -181,10 +183,10 @@ void mapping_init(){
     memset(pde, 0, MEMORY_PAGE_SIZE);
 
     idx_t index = 0;
-    for(idx_t didx = 0; didx < (sizeof(KERNEL_PAGE_TABEL) / 4); didx++)
+    for(idx_t didx = 0; didx < (sizeof(KERNEL_PAGE_TABLE) / 4); didx++)
     {
         //初始化内核的第didx个页表，大小1024*4byte=4K
-        page_entry_t *pte = (page_entry_t *)KERNEL_PAGE_TABEL[didx];
+        page_entry_t *pte = (page_entry_t *)KERNEL_PAGE_TABLE[didx];
         memset(pte, 0, MEMORY_PAGE_SIZE);
 
         //配置内核的第didx个页目录项，该页目录项指向1024个页表项的首地址
@@ -397,7 +399,7 @@ page_entry_t * copy_pde()
     entry_init(entry, IDX(pde));
 
     page_entry_t * dentry;
-    for(size_t didx = 2; didx < 1023; didx++)
+    for(size_t didx = (sizeof(KERNEL_PAGE_TABLE) / 4); didx < 1023; didx++)
     {
         dentry = & pde[didx];
         if(!dentry->present)
@@ -429,7 +431,7 @@ void free_pde()
 
     page_entry_t *pde = get_pde();
 
-    for (size_t didx = 2; didx < 1023; didx++)
+    for (size_t didx = (sizeof(KERNEL_PAGE_TABLE) / 4); didx < 1023; didx++)
     {
         page_entry_t *dentry = &pde[didx];
         if (!dentry->present)

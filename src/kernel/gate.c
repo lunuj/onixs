@@ -5,6 +5,7 @@
 #include <onixs/memorry.h>
 #include <onixs/clock.h>
 #include <onixs/device.h>
+#include <onixs/buffer.h>
 
 handler_t syscall_table[SYSCALL_SIZE];
 
@@ -22,15 +23,13 @@ static void sys_default()
 static uint32 sys_test(){
     // LOGK("syscall test...\n");
     char ch;
-    device_t *device = device_find(DEV_KEYBOARD, 0);
-    void *buf = (void *)alloc_kpage(1);
-
-    device = device_find(DEV_IDE_PART, 0);
+    device_t *device = device_find(DEV_IDE_DISK, 0);
     assert(device);
-
-    memset(buf, running_task()->uid, 512);
-    device_request(device->dev, buf, 1, running_task()->uid, 0, REQ_WRITE);
-    free_kpage((uint32)buf, 1);
+    buffer_t *buf = bread(device->dev, 0);
+    char *data = buf->data + SECTOR_SIZE;
+    memset(data, 0x5A, SECTOR_SIZE);
+    buf->dirty = true;
+    brelse(buf);
     return 255;
 }
 

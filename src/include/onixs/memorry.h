@@ -17,8 +17,25 @@
 #define MEMORY_BASE 0x100000 // 1M，可用内存开始的位置
 
 #define KERNEL_PAGE_DIR 0x1000              //内核页目录 大小4KB
-#define KERNEL_MAP_BITS 0x4000              //位图存放位置
-#define KERNEL_MEMORY_SIZE (0x100000 * 8)   //1M * 4 * 2
+#define KERNEL_MAP_BITS 0x6000              //位图存放位置
+// 内核占用的内存大小 16M
+#define KERNEL_MEMORY_SIZE (0x100000 * 16)  //1M * 16
+// 内核缓存地址
+#define KERNEL_BUFFER_MEM 0x800000
+// 内核缓存大小
+#define KERNEL_BUFFER_SIZE 0x400000
+// 内存虚拟磁盘地址
+#define KERNEL_RAMDISK_MEM (KERNEL_BUFFER_MEM + KERNEL_BUFFER_SIZE)
+// 内存虚拟磁盘大小
+#define KERNEL_RAMDISK_SIZE 0x400000// 内核占用的内存大小 16M
+// 内核缓存地址
+#define KERNEL_BUFFER_MEM 0x800000
+// 内核缓存大小
+#define KERNEL_BUFFER_SIZE 0x400000
+// 内存虚拟磁盘地址
+#define KERNEL_RAMDISK_MEM (KERNEL_BUFFER_MEM + KERNEL_BUFFER_SIZE)
+// 内存虚拟磁盘大小
+#define KERNEL_RAMDISK_SIZE 0x400000
 
 #define USER_STACK_SIZE 0x200000
 #define USER_STACK_TOP 0x8000000

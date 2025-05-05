@@ -60,7 +60,6 @@ void test_thread()
     interrupt_enable();
     char ch = 0;
     test();
-    LOGK("test finished of task %d\n", getpid());
     while(true){
         sleep(500);
     }
