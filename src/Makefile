@@ -3,8 +3,10 @@ BUILD_DIR	= $(SRC_DIR)/../build
 
 BOOT_DIR	= $(SRC_DIR)/boot
 KERNEL_DIR	= $(SRC_DIR)/kernel
+FS_DIR		= $(SRC_DIR)/fs
 LIB_DIR		= $(SRC_DIR)/lib
 INCLUDE_DIR = $(SRC_DIR)/include
+UTILS_DIR 	= $(SRC_DIR)/utils
 
 BOOT_NAME	 	= $(patsubst $(SRC_DIR)/%,$(BUILD_DIR)/%,$(BOOT_DIR)/boot.bin)
 LOADER_NAME 	= $(patsubst $(SRC_DIR)/%,$(BUILD_DIR)/%,$(BOOT_DIR)/loader.bin)
@@ -23,6 +25,9 @@ KERNEL_C_OBJ	= $(patsubst $(SRC_DIR)/%,$(BUILD_DIR)/%,$(KERNEL_C_SRC:.c=.o))
 
 LIB_C_SRC 		= $(wildcard $(LIB_DIR)/*.c)
 LIB_C_OBJ		= $(patsubst $(SRC_DIR)/%,$(BUILD_DIR)/%,$(LIB_C_SRC:.c=.o))
+
+FS_C_SRC 		= $(wildcard $(FS_DIR)/*.c)
+FS_C_OBJ		= $(patsubst $(SRC_DIR)/%,$(BUILD_DIR)/%,$(FS_C_SRC:.c=.o))
 
 KERNEL		= $(BUILD_DIR)/kernel.bin
 SYSTEM_BIN	= $(BUILD_DIR)/system.bin
@@ -74,7 +79,11 @@ $(LIB_C_OBJ): $(BUILD_DIR)/%.o: %.c
 	$(shell mkdir -p $(dir $@))
 	$(CC) $(CFLAGS) $(DEBUG) $(INCLUDE) -c $< -o $@ 
 
-$(KERNEL): $(KERNEL_ASM_OBJ) $(KERNEL_C_OBJ) $(LIB_ASM_OBJ) $(LIB_C_OBJ)
+$(FS_C_OBJ): $(BUILD_DIR)/%.o: %.c
+	$(shell mkdir -p $(dir $@))
+	$(CC) $(CFLAGS) $(DEBUG) $(INCLUDE) -c $< -o $@ 
+
+$(KERNEL): $(KERNEL_ASM_OBJ) $(KERNEL_C_OBJ) $(LIB_ASM_OBJ) $(LIB_C_OBJ) $(FS_C_OBJ)
 	$(LD) $(LDFLAGS) $^ -o $@
 
 $(SYSTEM_BIN): $(KERNEL)
@@ -85,17 +94,19 @@ $(SYSTEM_MAP): $(KERNEL)
 	$(NM) $< | sort > $@
 
 $(DATA_IMG):
-	yes | qemu-img create -f raw $@ 32K
+#	yes | qemu-img create -f raw $@ 32M
+	cp $(UTILS_DIR)/$(notdir $@) $(BUILD_DIR)/$(notdir $@)
 
 $(SYSTEM_IMG): $(SYSTEM_BIN) $(SYSTEM_HEX) $(SYSTEM_MAP) $(BOOT_BIN)
 ifneq ($(wildcard $(SYSTEM_IMG)),)
 else
-	$(shell mkdir -p $(dir $@))
-	yes | qemu-img create -f raw $@ 16M
-# yes | bximage -q -hd=16 -func=create -sectsize=512 -imgmode=flat $@
+#	$(shell mkdir -p $(dir $@))
+#	yes | qemu-img create -f raw $@ 16M
+# 	yes | bximage -q -hd=16 -func=create -sectsize=512 -imgmode=flat $@
+	cp $(UTILS_DIR)/$(notdir $@) $(BUILD_DIR)/$(notdir $@)
 endif
-	dd if=$(BOOT_NAME) of=$(SYSTEM_IMG) bs=512 count=1 conv=notrunc
-	dd if=$(LOADER_NAME) of=$(SYSTEM_IMG) bs=512 count=4 seek=2 conv=notrunc
+#	dd if=$(BOOT_NAME) of=$(SYSTEM_IMG) bs=512 count=1 conv=notrunc
+#	dd if=$(LOADER_NAME) of=$(SYSTEM_IMG) bs=512 count=4 seek=2 conv=notrunc
 	test -n "$$(find $(SYSTEM_BIN) -size -100k)"
 	dd if=$(SYSTEM_BIN) of=$(SYSTEM_IMG) bs=512 count=200 seek=10 conv=notrunc
 

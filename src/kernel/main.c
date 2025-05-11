@@ -13,6 +13,8 @@
 #include <onixs/ide.h>
 #include <onixs/buffer.h>
 
+extern void super_init();
+
 void kernel_init(){
     console_clear();
     memory_map_init();
@@ -23,8 +25,9 @@ void kernel_init(){
     buffer_init();
     interrupt_init();
     clock_init();
-
     ide_init();
+    super_init();
+
     task_init();
     syscall_init();
     keyboard_init();

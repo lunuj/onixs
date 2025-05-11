@@ -1,0 +1,7 @@
+label: dos
+label-id: 0x00000000
+device: data.img
+unit: sectors
+sector-size: 512
+
+data.img1 : start=        2048, size=         63472, type=83

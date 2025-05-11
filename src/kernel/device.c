@@ -175,7 +175,7 @@ void device_request(dev_t dev, void *buf, uint8 count, idx_t idx, int flags, uin
 
     request_t *req = kmalloc(sizeof(request_t));
 
-    req->dev = dev;
+    req->dev = device->dev;
     req->buf = buf;
     req->count = count;
     req->idx = offset;

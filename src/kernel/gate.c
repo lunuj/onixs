@@ -23,13 +23,14 @@ static void sys_default()
 static uint32 sys_test(){
     // LOGK("syscall test...\n");
     char ch;
-    device_t *device = device_find(DEV_IDE_DISK, 0);
+    device_t *device = device_find(DEV_KEYBOARD, 0);
     assert(device);
-    buffer_t *buf = bread(device->dev, 0);
-    char *data = buf->data + SECTOR_SIZE;
-    memset(data, 0x5A, SECTOR_SIZE);
-    buf->dirty = true;
-    brelse(buf);
+    device_read(device->dev, &ch, 1, 0, 0);
+
+    device = device_find(DEV_CONSOLE, 0);
+    assert(device);
+    device_write(device->dev, &ch, 1, 0, 0);
+    
     return 255;
 }
 

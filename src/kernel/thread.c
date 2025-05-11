@@ -59,8 +59,8 @@ void test_thread()
     uint32 counter = 0;
     interrupt_enable();
     char ch = 0;
-    test();
     while(true){
-        sleep(500);
+        test();
+        sleep(10);
     }
 }

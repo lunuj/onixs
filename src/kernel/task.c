@@ -328,7 +328,7 @@ void task_exit(int status)
     task->state = TASK_DIED;
     task->status = status;
 
-    free_pde(task->pde);
+    free_pde();
     free_kpage((uint32)task->vmap->bits, 1);
     kfree(task->vmap);
 
