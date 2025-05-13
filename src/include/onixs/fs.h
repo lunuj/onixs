@@ -10,6 +10,8 @@
 #define MINIX1_MAGIC 0x137F // 文件系统魔数
 #define NAME_LEN 14        // 文件名长度
 
+#define BLOCK_BITS (BLOCK_SIZE * 8) // 块位图大小
+
 #define IMAP_NR 8
 #define ZMAP_NR 8
 
@@ -70,5 +72,10 @@ typedef struct dentry_t
 
 super_block_t *get_super(dev_t dev);  // 获得 dev 对应的超级块
 super_block_t *read_super(dev_t dev); // 读取 dev 对应的超级块
+
+idx_t balloc(dev_t dev);          // 分配一个文件块
+void bfree(dev_t dev, idx_t idx); // 释放一个文件块
+idx_t ialloc(dev_t dev);          // 分配一个文件系统 inode
+void ifree(dev_t dev, idx_t idx); // 释放一个文件系统 inode
 
 #endif // FS_H
