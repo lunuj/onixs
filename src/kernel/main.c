@@ -13,24 +13,29 @@
 #include <onixs/ide.h>
 #include <onixs/buffer.h>
 
+extern void inode_init();
 extern void super_init();
 
 void kernel_init(){
     console_clear();
+//  内存管理
     memory_map_init();
     mapping_init();
     tss_init();
     arena_init();
-    time_init();
-    buffer_init();
+//  进程调度
     interrupt_init();
     clock_init();
-    ide_init();
-    super_init();
-
-    task_init();
     syscall_init();
+    task_init();
+//  设备驱动
+    time_init();
+    ide_init();
     keyboard_init();
+//  文件系统
+    buffer_init();
+    inode_init();
+    super_init();
 
     interrupt_enable();
     hang(true);

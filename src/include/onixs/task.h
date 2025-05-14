@@ -39,6 +39,8 @@ typedef struct task_t{
     uint32 brk;
     int status;
     pid_t waitpid;
+    struct inode_t *ipwd;
+    struct inode_T *iroot;
     uint32 magic;                   // 内核魔术用于检测栈溢出
 } task_t;
 
