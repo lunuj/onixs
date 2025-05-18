@@ -57,7 +57,7 @@ void sleep(uint32 ms)
 
 int32 write(fd_t fd, char * buf, uint32 len)
 {
-    return _syscall3(SYS_NR_WRIET, fd, (uint32)buf, len);
+    return _syscall3(SYS_NR_WRITE, fd, (uint32)buf, len);
 }
 
 int32 brk(void * addr)
@@ -89,4 +89,9 @@ pid_t waitpid(pid_t pid, int * status)
 time_t time()
 {
     return _syscall0(SYS_NR_TIME);
+}
+
+mode_t umask(mode_t mask)
+{
+    return _syscall1(SYS_NR_UMASK, (uint32)mask);
 }

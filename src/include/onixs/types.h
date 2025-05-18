@@ -32,6 +32,7 @@ typedef unsigned long long uint64;
 typedef uint32 time_t;
 typedef uint32 idx_t;
 typedef uint32 dev_t;
+typedef uint16 mode_t; // 文件权限
 
 typedef int32 fd_t;
 typedef int32 pid_t;

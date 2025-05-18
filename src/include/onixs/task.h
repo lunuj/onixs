@@ -6,7 +6,7 @@
 #include <onixs/list.h>
 
 #define KERNEL_USER 0
-#define NORMAL_USER 1
+#define NORMAL_USER 1000
 
 #define TASK_NAME_LEN 16
 #define TASK_NUMBER 64
@@ -28,10 +28,11 @@ typedef struct task_t{
     list_node_t node;               // 任务阻塞节点
     task_state_t state;             // 任务状态
     uint32 priority;                // 任务优先级
-    int ticks;                   // 剩余时间片
+    int ticks;                      // 剩余时间片
     uint32 jiffies;                 // 上次执行时全局时间片
     char name[TASK_NAME_LEN];       // 任务名
     uint32 uid;                     // 用户id
+    uint32 gid;                     // 用户组 id
     pid_t pid;                      // 任务 id
     pid_t ppid;                     // 副任务 id
     uint32 pde;                     // 页目录物理地址
@@ -41,6 +42,7 @@ typedef struct task_t{
     pid_t waitpid;
     struct inode_t *ipwd;
     struct inode_T *iroot;
+    uint16 umask;                   // 进程用户权限
     uint32 magic;                   // 内核魔术用于检测栈溢出
 } task_t;
 

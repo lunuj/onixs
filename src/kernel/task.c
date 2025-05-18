@@ -120,9 +120,12 @@ static task_t * task_create(target_t target, const char * name, uint32 priority,
     task->jiffies = 0;
     task->state = TASK_READY;
     task->uid = uid;
+    task->gid = 0;  // TODO
     task->vmap = &kernel_map;
     task->pde = KERNEL_PAGE_DIR;
     task->brk = KERNEL_MEMORY_SIZE;
+    task->umask = 0022;
+
     task->magic = ONIXS_MAGIC;
 
     return task;
@@ -187,7 +190,7 @@ void task_init(){
     task_setup();
     idle_task = task_create(idle_thread, "idle", 1, KERNEL_USER);
     task_create(init_thread, "init", 5, NORMAL_USER);
-    task_create(test_thread, "test", 5, KERNEL_USER);
+    task_create(test_thread, "test", 5, NORMAL_USER);
 }
 
 void task_block(task_t * task, list_t * blist, task_state_t state)
