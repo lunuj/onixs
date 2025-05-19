@@ -102,7 +102,9 @@ static void mount_root()
     assert(device);
 
     root = read_super(device->dev);
-
+    
+    root->iroot = iget(device->dev, 1);
+    root->imount = iget(device->dev, 1);
 }
 
 /**

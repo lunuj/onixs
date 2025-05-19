@@ -22,6 +22,8 @@ static void sys_default()
 
 static uint32 sys_test(){
     // LOGK("syscall test...\n");
+    extern void dir_test();
+    dir_test();
     char ch;
     device_t *device = device_find(DEV_KEYBOARD, 0);
     assert(device);

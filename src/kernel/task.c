@@ -7,6 +7,7 @@
 #include <onixs/interrupt.h>
 #include <onixs/syscall.h>
 #include <onixs/arena.h>
+#include <onixs/fs.h>
 
 extern tss_t tss;
 
@@ -124,6 +125,8 @@ static task_t * task_create(target_t target, const char * name, uint32 priority,
     task->vmap = &kernel_map;
     task->pde = KERNEL_PAGE_DIR;
     task->brk = KERNEL_MEMORY_SIZE;
+    task->iroot = get_root_inode();
+    task->ipwd = get_root_inode();
     task->umask = 0022;
 
     task->magic = ONIXS_MAGIC;
