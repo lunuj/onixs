@@ -6,6 +6,11 @@
 #include <onixs/buffer.h>
 #include <onixs/syscall.h>
 #include <onixs/stat.h>
+#include <onixs/task.h>
+
+#define P_EXEC IXOTH
+#define P_READ IROTH
+#define P_WRITE IWOTH
 
 static bool match_name(const char *name, const char *entry_name, char **next)
 {
@@ -106,63 +111,120 @@ static buffer_t *add_entry(inode_t *dir, const char *name, dentry_t **result)
     }   
 }
 
-// TEST
-#include <onixs/task.h>
-void dir_test()
+static bool premission(inode_t *inode, uint16 mask)
 {
+    uint16 mode = inode->desc->mode;
+    if(!inode->desc->nlinks)
+        return false;
+
     task_t *task = running_task();
-    inode_t *inode = task->iroot;
+    if(task->uid == KERNEL_USER)
+        return true;
+
+    if(task->uid == inode->desc->uid)
+    {
+        mode >>= 6;
+    }else if(task->gid == inode->desc->gid)
+        mode >>= 3;
+    
+    if((mode & mask & 0b111) == mask)
+        return true;
+    return false;
+}
+
+inode_t *named(char *pathname, char **next)
+{
+    inode_t *inode = NULL;
+    task_t *task = running_task();
+    char *left = pathname;
+    if(IS_SEPARATOR(left[0]))
+    {
+        inode = task->iroot;
+        left++;
+    }else if(left[0])
+    {
+        inode = task->ipwd;
+    }else{
+        return NULL;
+    }
+
     inode->count++;
-    char *next = NULL;
+    
+    // left为空则为根目录，无文件
+    *next = left;
+    if(!*left)
+    {
+        return inode;
+    }
+
+    // 寻找最右侧文件名索引
+    char *right = strrsep(left);
+    if(!right || right < left)
+    {
+        return inode;
+    }
+    right++;    
+
     dentry_t *entry = NULL;
     buffer_t *buf = NULL;
-// TEST 1
-#if 1
-    buf = find_entry(&inode, "hello.txt", &next, &entry);
-    idx_t nr = entry->nr;
-    brelse(buf);
+    while(true)
+    {
+        buf = find_entry(&inode, left, next, &entry);
+        if(!buf)
+            goto failure;
+        
+        dev_t dev = inode->dev;
 
-    buf = add_entry(inode, "world.txt", &entry);
-    entry->nr = nr;
+        iput(inode);
+        inode = iget(inode->dev, entry->nr);
+        if(!ISDIR(inode->desc->mode) || !premission(inode, P_EXEC))
+            goto failure;
+        if(right == *next)
+            goto success;
+        left = *next;
+    }
 
-    inode_t *hello = iget(inode->dev, nr);
-    hello->desc->nlinks++;
-    hello->buf->dirty = true;
-
+brelse(buf);
+success:
+    return inode;
+failure:
     iput(inode);
-    iput(hello);
+    return NULL;
+}
+
+inode_t *namei(char *pathname)
+{
+    char *next = NULL;
+    inode_t *dir = named(pathname, &next);
+    if(!dir)
+        return NULL;
+    if(!(*next))
+        return dir;
+    
+    char *name = next;
+    dentry_t *entry = NULL;
+    buffer_t *buf = find_entry(&dir, name, &next, &entry);
+    if(!buf)
+    {
+        iput(dir);
+        return NULL;
+    }
+
+    inode_t *inode = iget(dir->dev, entry->nr);
+
+    iput(dir);
     brelse(buf);
-#endif
+    return inode;
+}
 
-
-// TEST 2
-#if 0
-    char pathname[] = "d1/d2/d3/d4";
-    char *name = pathname;
-    buf = find_entry(&inode, name, &next, &entry);
-    brelse(buf);
-
-    dev_t dev = inode->dev;
+void dir_test()
+{
+    char pathname[] = "/";
+    char *name = NULL;
+    inode_t *inode = named(pathname, &name);
     iput(inode);
-    inode = iget(dev, entry->nr);
 
-    name = next;    // d2/d3/d4
-    buf = find_entry(&inode, name, &next, &entry);
-    brelse(buf);
-
+    inode = namei("/home/hello.txt");
+    SYS_LOG(LOG_INFO, "get inode %d\n", inode->nr);
     iput(inode);
-    inode = iget(dev, entry->nr);
-
-    name = next;    // d3/d4
-    buf = find_entry(&inode, name, &next, &entry);
-    brelse(buf);
-
-    iput(inode);
-    inode = iget(dev, entry->nr);
-
-    name = next;    // d4
-    buf = find_entry(&inode, name, &next, &entry);
-    brelse(buf);
-    iput(inode);
-#endif
 }

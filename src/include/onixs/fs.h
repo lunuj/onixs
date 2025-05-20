@@ -97,4 +97,7 @@ idx_t bmap(inode_t *inode, idx_t block, bool create);
 inode_t *get_root_inode();
 inode_t *iget(dev_t dev, idx_t nr);
 void iput(inode_t *inode);
+
+static inode_t *named(char *pathname, char **next);
+static inode_t *namei(char *pathname);
 #endif // FS_H
