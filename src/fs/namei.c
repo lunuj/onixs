@@ -169,6 +169,7 @@ inode_t *named(char *pathname, char **next)
     buffer_t *buf = NULL;
     while(true)
     {
+        brelse(buf);
         buf = find_entry(&inode, left, next, &entry);
         if(!buf)
             goto failure;
@@ -176,7 +177,7 @@ inode_t *named(char *pathname, char **next)
         dev_t dev = inode->dev;
 
         iput(inode);
-        inode = iget(inode->dev, entry->nr);
+        inode = iget(dev, entry->nr);
         if(!ISDIR(inode->desc->mode) || !premission(inode, P_EXEC))
             goto failure;
         if(right == *next)
@@ -217,14 +218,22 @@ inode_t *namei(char *pathname)
     return inode;
 }
 
+// TEST
+#include <onixs/memorry.h>
+
 void dir_test()
 {
-    char pathname[] = "/";
-    char *name = NULL;
-    inode_t *inode = named(pathname, &name);
-    iput(inode);
+    inode_t *inode = namei("/d1/d2/d3/../../../hello.txt");
+    char *buf = (char *)alloc_kpage(1);
+    int i = inode_read(inode, buf, 1024, 0);
 
-    inode = namei("/home/hello.txt");
+    SYS_LOG(LOG_INFO, "content: %s\n", buf);
+
+    memset(buf, 'A', MEMORY_PAGE_SIZE);
+    inode_write(inode, buf, MEMORY_PAGE_SIZE, 0);
+
+    memset(buf, 'B', MEMORY_PAGE_SIZE);
+    inode_write(inode, buf, MEMORY_PAGE_SIZE, MEMORY_PAGE_SIZE);
     SYS_LOG(LOG_INFO, "get inode %d\n", inode->nr);
     iput(inode);
 }

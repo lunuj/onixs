@@ -6,6 +6,7 @@
 #include <onixs/arena.h>
 #include <onixs/string.h>
 #include <onixs/stdlib.h>
+#include <onixs/stat.h>
 
 #define INODE_NR 64
 
@@ -157,3 +158,74 @@ void inode_init()
     }
 }
 
+int inode_read(inode_t *inode, char *buf, uint32 len, off_t offset)
+{
+    assert(ISFILE(inode->desc->mode) || ISDIR(inode->desc->mode));
+
+    if(offset > inode->desc->size)
+        return EOF;
+
+    uint32 begin = offset;
+
+    uint32 left = MIN(len, inode->desc->size - offset);
+    while (left)
+    {
+        idx_t nr = bmap(inode, offset/BLOCK_SIZE, false);
+        assert(nr);
+
+        buffer_t *bf = bread(inode->dev, nr);
+        
+        uint32 start = offset%BLOCK_SIZE;
+        uint32 chars = MIN(BLOCK_SIZE - start, left);
+
+        char *ptr = bf->data + start;
+        memcpy(buf, ptr, chars);
+
+        offset += chars;
+        left -= chars;
+
+        buf += chars;
+        brelse(bf);
+    }
+    inode->atime = time();
+    return offset - begin;
+}
+
+int inode_write(inode_t *inode, char *buf, uint32 len, off_t offset)
+{
+    assert(ISFILE(inode->desc->mode));
+
+    uint32 begin = offset;
+    uint32 left = len;
+
+    while(left)
+    {
+        idx_t nr = bmap(inode, offset/BLOCK_SIZE, true);
+        assert(nr);
+
+        buffer_t *bf = bread(inode->dev, nr);
+        bf->dirty = true;
+
+        uint32 start = offset%BLOCK_SIZE;
+        uint32 chars = MIN(BLOCK_SIZE - start, left);
+
+        char *ptr = bf->data + start;
+        memcpy(ptr, buf, chars);
+
+        offset += chars;
+        left -= chars;
+        buf += chars;
+        // 如果偏移量大于文件大小，则更新
+        if (offset > inode->desc->size)
+        {
+            inode->desc->size = offset;
+            inode->buf->dirty = true;
+        }
+
+        brelse(bf);
+    }
+    inode->desc->mtime = inode->atime = time();
+
+    bwrite(inode->buf);
+    return offset - begin;
+}

@@ -36,6 +36,7 @@ typedef uint16 mode_t; // 文件权限
 
 typedef int32 fd_t;
 typedef int32 pid_t;
+typedef int32 off_t;
 typedef enum std_fd_t
 {
     stdin,
