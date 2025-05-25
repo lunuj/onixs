@@ -224,16 +224,7 @@ inode_t *namei(char *pathname)
 void dir_test()
 {
     inode_t *inode = namei("/d1/d2/d3/../../../hello.txt");
-    char *buf = (char *)alloc_kpage(1);
-    int i = inode_read(inode, buf, 1024, 0);
 
-    SYS_LOG(LOG_INFO, "content: %s\n", buf);
-
-    memset(buf, 'A', MEMORY_PAGE_SIZE);
-    inode_write(inode, buf, MEMORY_PAGE_SIZE, 0);
-
-    memset(buf, 'B', MEMORY_PAGE_SIZE);
-    inode_write(inode, buf, MEMORY_PAGE_SIZE, MEMORY_PAGE_SIZE);
-    SYS_LOG(LOG_INFO, "get inode %d\n", inode->nr);
+    inode_truncate(inode);
     iput(inode);
 }

@@ -229,3 +229,49 @@ int inode_write(inode_t *inode, char *buf, uint32 len, off_t offset)
     bwrite(inode->buf);
     return offset - begin;
 }
+
+static void inode_bfree(inode_t *inode, uint16 *arrary, int index, int level)
+{
+    if(!arrary[index])
+    {
+        return;
+    }
+
+    if(!level)
+    {
+        bfree(inode->dev, arrary[index]);
+        return;
+    }
+
+    buffer_t *buf = bread(inode->dev, arrary[index]);
+    for(size_t i = 0; i < BLOCK_INDEXES; i++)
+    {
+        inode_bfree(inode, (uint16 *)buf->data, i, level - 1);
+    }
+    brelse(buf);
+    bfree(inode->dev, arrary[index]);
+}
+
+void inode_truncate(inode_t *inode)
+{
+    if(!ISFILE(inode->desc->mode) && !ISDIR(inode->desc->mode))
+    {
+        return;
+    }
+
+    for (size_t i = 0; i < DIRECT_BLOCK; i++)
+    {
+        inode_bfree(inode, inode->desc->zone, i, 0);
+        inode->desc->zone[i] = 0;
+    }
+
+    inode_bfree(inode, inode->desc->zone, DIRECT_BLOCK, 1);
+
+    inode_bfree(inode, inode->desc->zone, DIRECT_BLOCK + 1, 2);
+    inode->desc->zone[DIRECT_BLOCK] = 0;
+    inode->desc->zone[DIRECT_BLOCK + 1] = 0;
+    inode->desc->size = 0;
+    inode->buf->dirty = true;
+    inode->desc->mtime = time();
+    bwrite(inode->buf);
+}
