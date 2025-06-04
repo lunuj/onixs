@@ -22,8 +22,6 @@ static void sys_default()
 
 static uint32 sys_test(){
     // LOGK("syscall test...\n");
-    extern void dir_test();
-    dir_test();
     char ch;
     device_t *device = device_find(DEV_KEYBOARD, 0);
     assert(device);
@@ -46,6 +44,8 @@ static int32 sys_write(fd_t fd, char * buf, uint32 len)
     return 0;
 }
 extern uint32 startup_time;
+extern int sys_mkdir();
+extern int sys_rmdir();
 extern mode_t sys_umask(mode_t mask);
 
 time_t sys_time()
@@ -65,6 +65,8 @@ void syscall_init(){
     syscall_table[SYS_NR_TIME] = sys_time;
     syscall_table[SYS_NR_GETPID] = sys_getpid;
     syscall_table[SYS_NR_GETPPID] = sys_getppid;
+    syscall_table[SYS_NR_MKDIR] = sys_mkdir;
+    syscall_table[SYS_NR_RMDIR] = sys_rmdir;
     syscall_table[SYS_NR_BRK] = sys_brk;
     syscall_table[SYS_NR_UMASK] = sys_umask;
     syscall_table[SYS_NR_SLEEP] = task_sleep;

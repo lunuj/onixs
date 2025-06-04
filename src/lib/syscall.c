@@ -86,6 +86,16 @@ pid_t waitpid(pid_t pid, int * status)
     return _syscall2(SYS_NR_WAITPID, pid, (uint32)status);
 }
 
+int mkdir(char *pathname, int mode)
+{
+    return _syscall2(SYS_NR_MKDIR, (uint32)pathname, (uint32)mode);
+}
+
+int rmdir(char *pathname)
+{
+    return _syscall1(SYS_NR_RMDIR, (uint32)pathname);
+}
+
 time_t time()
 {
     return _syscall0(SYS_NR_TIME);
