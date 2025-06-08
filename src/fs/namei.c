@@ -389,3 +389,109 @@ rollback:
     brelse(ebuf);
     return ret;
 }
+
+int sys_link(char *oldname, char *newname)
+{
+    int ret = EOF;
+    buffer_t *buf = NULL;
+    inode_t *dir = NULL;
+    inode_t *inode = namei(oldname);
+    if(!inode)
+        goto rollback;
+
+    if(ISDIR(inode->desc->mode))
+        goto rollback;
+
+    char *next = NULL;
+    dir = named(newname, &next);
+    if(!dir)
+        goto rollback;
+    
+    if(!(*next))
+        goto rollback;
+    
+    if(dir->dev != inode->dev)
+        goto rollback;
+    
+    if(!premission(dir, P_WRITE))
+        goto rollback;
+
+    char *name = next;
+    dentry_t *entry;
+
+    buf = find_entry(&dir, name, &next, &entry);
+    if(buf)
+        goto rollback;
+
+    buf = find_entry(&dir, name, &next, &entry);
+    if(buf)
+        goto rollback;
+    
+    buf = add_entry(dir, name, &entry);
+    entry->nr = inode->nr;
+    buf->dirty = true;
+
+    inode->desc->nlinks++;
+    inode->ctime = time();
+    inode->buf->dirty = true;
+    ret = 0;
+rollback:
+    brelse(buf);
+    iput(inode);
+    iput(dir);
+    return ret;
+}
+
+int sys_unlink(char *filename)
+{
+    int ret = EOF;
+    char *next = NULL;
+    inode_t *inode = NULL;
+    buffer_t *buf = NULL;
+    inode_t *dir = named(filename, &next);
+    if(!dir)
+        goto rollback;
+    
+    if(!(*next))
+        goto rollback;
+
+    if(!premission(dir, P_WRITE));
+        goto rollback;
+    
+    char *name = next;
+    dentry_t *entry;
+    buf = find_entry(&dir, name, &next, &entry);
+    if(!buf)
+        goto rollback;
+    
+    inode = iget(dir->dev, entry->nr);
+    if(ISDIR(inode->desc->mode))
+        goto rollback;
+
+    task_t *task = running_task();
+    if((inode->desc->mode & ISVTX) && task->uid != inode->desc->uid)
+        goto rollback;
+
+    if(!inode->desc->nlinks)
+        SYS_LOG(LOG_INFO, "deleting non exists file (%04x:%d)\n", inode->dev, inode->nr);
+    
+    entry->nr = 0;
+    buf->dirty = true;
+
+    inode->desc->nlinks--;
+    inode->buf->dirty = true;
+
+    if (inode->desc->nlinks == 0)
+    {
+        inode_truncate(inode);
+        ifree(inode->dev, inode->nr);
+    }
+
+    ret = 0;
+
+rollback:
+    brelse(buf);
+    iput(inode);
+    iput(dir);
+    return ret;
+}

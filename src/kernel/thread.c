@@ -58,9 +58,8 @@ void test_thread()
 {
     uint32 counter = 0;
     interrupt_enable();
-    char ch = 0;
-    mkdir("/test.txt", 0755);
-    rmdir("/test.txt");
+    link("/hello.txt", "/world.txt");
+    unlink("/hello.txt");
     while(true){
         test();
         sleep(10);

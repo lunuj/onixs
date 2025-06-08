@@ -46,6 +46,9 @@ static int32 sys_write(fd_t fd, char * buf, uint32 len)
 extern uint32 startup_time;
 extern int sys_mkdir();
 extern int sys_rmdir();
+
+extern int sys_link();
+extern int sys_unlink();
 extern mode_t sys_umask(mode_t mask);
 
 time_t sys_time()
@@ -62,6 +65,8 @@ void syscall_init(){
     syscall_table[SYS_NR_EXIT] = task_exit;
     syscall_table[SYS_NR_WRITE] = sys_write;
     syscall_table[SYS_NR_WAITPID] = task_waitpid;
+    syscall_table[SYS_NR_LINK] = sys_link;
+    syscall_table[SYS_NR_UNLINK] = sys_unlink;
     syscall_table[SYS_NR_TIME] = sys_time;
     syscall_table[SYS_NR_GETPID] = sys_getpid;
     syscall_table[SYS_NR_GETPPID] = sys_getppid;
