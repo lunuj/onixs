@@ -58,10 +58,8 @@ void test_thread()
 {
     uint32 counter = 0;
     interrupt_enable();
-    link("/hello.txt", "/world.txt");
-    unlink("/hello.txt");
+    test();
     while(true){
-        test();
         sleep(10);
     }
 }
