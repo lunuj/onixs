@@ -11,6 +11,8 @@
 #define TASK_NAME_LEN 16
 #define TASK_NUMBER 64
 
+#define TASK_FILE_NR 16
+
 typedef enum task_state_t{
     TASK_INIT,          // 创建
     TASK_RUNNING,       // 运行
@@ -43,6 +45,7 @@ typedef struct task_t{
     struct inode_t *ipwd;
     struct inode_t *iroot;
     uint16 umask;                   // 进程用户权限
+    struct file_t *files[TASK_FILE_NR];
     uint32 magic;                   // 内核魔术用于检测栈溢出
 } task_t;
 

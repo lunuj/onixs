@@ -15,6 +15,7 @@
 
 extern void inode_init();
 extern void super_init();
+extern void file_init();
 
 void kernel_init(){
     console_clear();
@@ -36,6 +37,7 @@ void kernel_init(){
     buffer_init();
     inode_init();
     super_init();
+    file_init();
 
     interrupt_enable();
     hang(true);

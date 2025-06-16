@@ -97,6 +97,15 @@ typedef struct dentry_t
     char name[NAME_LEN]; // 文件名
 } dentry_t;
 
+typedef struct file_t
+{
+    inode_t *inode;
+    uint32 count;
+    off_t offset;
+    int flags;
+    int mode;
+}file_t;
+
 super_block_t *get_super(dev_t dev);  // 获得 dev 对应的超级块
 super_block_t *read_super(dev_t dev); // 读取 dev 对应的超级块
 

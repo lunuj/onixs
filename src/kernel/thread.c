@@ -58,8 +58,8 @@ void test_thread()
 {
     uint32 counter = 0;
     interrupt_enable();
-    test();
     while(true){
+        test();
         sleep(10);
     }
 }
