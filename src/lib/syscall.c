@@ -81,6 +81,21 @@ void exit(int status){
     _syscall1(SYS_NR_EXIT, status);
 }
 
+fd_t open(char *filename, int flags, int mode)
+{
+    return _syscall3(SYS_NR_OPEN, (uint32)filename, (uint32)flags, (uint32)mode);
+}
+
+void close(fd_t fd)
+{
+    _syscall1(SYS_NR_CLOSE, (uint32)fd);
+}
+
+fd_t creat(char *filename, int mode)
+{
+    return _syscall2(SYS_NR_CREAT, (uint32)filename, (uint32)mode);
+}
+
 pid_t waitpid(pid_t pid, int * status)
 {
     return _syscall2(SYS_NR_WAITPID, pid, (uint32)status);

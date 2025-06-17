@@ -404,7 +404,7 @@ rollback:
 fd_t task_get_fd(task_t *task)
 {
     fd_t i;
-    for (size_t i = 3; i < TASK_FILE_NR; i++)
+    for (i = 3; i < TASK_FILE_NR; i++)
     {
         if(!task->files[i])
             break;

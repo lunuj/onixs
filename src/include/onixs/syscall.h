@@ -8,7 +8,10 @@ typedef enum syscall_t{
     SYS_NR_EXIT = 1,
     SYS_NR_FORK = 2,
     SYS_NR_WRITE = 4,
+    SYS_NR_OPEN = 5,
+    SYS_NR_CLOSE = 6,
     SYS_NR_WAITPID = 7,
+    SYS_NR_CREAT = 8,
     SYS_NR_LINK = 9,
     SYS_NR_UNLINK = 10,
     SYS_NR_TIME = 13,
@@ -24,6 +27,9 @@ typedef enum syscall_t{
 
 uint32 test();
 void yield();
+fd_t open(char *filename, int flahs, int mode);
+fd_t creat(char *filename, int mode);
+void close(fd_t fd);
 int32 write(fd_t fd, char * buf, uint32 len);
 void sleep(uint32 ms);
 int32 brk(void * addr);

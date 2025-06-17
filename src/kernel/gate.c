@@ -59,6 +59,10 @@ extern uint32 startup_time;
 extern int sys_mkdir();
 extern int sys_rmdir();
 
+extern fd_t sys_open();
+extern fd_t sys_close();
+extern fd_t sys_creat();
+
 extern int sys_link();
 extern int sys_unlink();
 extern mode_t sys_umask(mode_t mask);
@@ -76,7 +80,10 @@ void syscall_init(){
     syscall_table[SYS_NR_TEST] = sys_test;
     syscall_table[SYS_NR_EXIT] = task_exit;
     syscall_table[SYS_NR_WRITE] = sys_write;
+    syscall_table[SYS_NR_OPEN] = sys_open;
+    syscall_table[SYS_NR_CLOSE] = sys_close;
     syscall_table[SYS_NR_WAITPID] = task_waitpid;
+    syscall_table[SYS_NR_CREAT] = sys_creat;
     syscall_table[SYS_NR_LINK] = sys_link;
     syscall_table[SYS_NR_UNLINK] = sys_unlink;
     syscall_table[SYS_NR_TIME] = sys_time;

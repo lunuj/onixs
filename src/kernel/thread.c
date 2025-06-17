@@ -7,6 +7,7 @@
 #include <onixs/task.h>
 #include <onixs/arena.h>
 #include <onixs/device.h>
+#include <onixs/fs.h>
 
 void idle_thread()
 {
@@ -27,6 +28,10 @@ static void user_init_thread()
 {
     uint32 counter = 0;
     int status;
+    // TEST
+    fd_t fd = open("/world.txt", O_CREAT | O_RDWR, 0755);
+    close(fd);
+    
     while(true)
     {
         while(1){
