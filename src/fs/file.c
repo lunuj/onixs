@@ -109,7 +109,7 @@ fd_t sys_open(char *filename, int flags, int mode)
     file->count = 1;
     file->mode = inode->desc->mode;
     file->offset = 0;
-    if(flags | O_APPEND)
+    if(flags & O_APPEND)
     {
         file->offset = file->inode->desc->size;
     }
