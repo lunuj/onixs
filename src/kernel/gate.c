@@ -46,27 +46,7 @@ static uint32 sys_test(){
     return 255;
 }
 
-static int32 sys_write(fd_t fd, char * buf, uint32 len)
-{
-    if(fd == stdout || fd == stderr)
-    {
-        return console_write(NULL, buf, len);
-    }
-    panic("write");
-    return 0;
-}
 extern uint32 startup_time;
-extern int sys_mkdir();
-extern int sys_rmdir();
-
-extern fd_t sys_open();
-extern fd_t sys_close();
-extern fd_t sys_creat();
-
-extern int sys_link();
-extern int sys_unlink();
-extern mode_t sys_umask(mode_t mask);
-
 time_t sys_time()
 {
     return startup_time + (jiffies * JIFFY) /1000;
@@ -79,6 +59,8 @@ void syscall_init(){
     }
     syscall_table[SYS_NR_TEST] = sys_test;
     syscall_table[SYS_NR_EXIT] = task_exit;
+    syscall_table[SYS_NR_FORK] = task_fork;
+    syscall_table[SYS_NR_READ] = sys_read;
     syscall_table[SYS_NR_WRITE] = sys_write;
     syscall_table[SYS_NR_OPEN] = sys_open;
     syscall_table[SYS_NR_CLOSE] = sys_close;
@@ -95,5 +77,4 @@ void syscall_init(){
     syscall_table[SYS_NR_UMASK] = sys_umask;
     syscall_table[SYS_NR_SLEEP] = task_sleep;
     syscall_table[SYS_NR_YIELD] = task_yield;
-    syscall_table[SYS_NR_FORK] = task_fork;
 }

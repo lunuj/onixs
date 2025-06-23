@@ -7,6 +7,7 @@ typedef enum syscall_t{
     SYS_NR_TEST,
     SYS_NR_EXIT = 1,
     SYS_NR_FORK = 2,
+    SYS_NR_READ = 3,
     SYS_NR_WRITE = 4,
     SYS_NR_OPEN = 5,
     SYS_NR_CLOSE = 6,
@@ -26,22 +27,35 @@ typedef enum syscall_t{
 } syscall_t;
 
 uint32 test();
-void yield();
-fd_t open(char *filename, int flahs, int mode);
-fd_t creat(char *filename, int mode);
-void close(fd_t fd);
-int32 write(fd_t fd, char * buf, uint32 len);
-void sleep(uint32 ms);
-int32 brk(void * addr);
-pid_t getpid();
-pid_t getppid();
-int mkdir(char *pathname, int mode);
-int rmdir(char *pathname);
 void exit(int status);
 pid_t fork();
+
+int read(fd_t fd, char *buf, uint32 len);
+int32 write(fd_t fd, char * buf, uint32 len);
+
+fd_t open(char *filename, int flahs, int mode);
+void close(fd_t fd);
+
 pid_t waitpid(pid_t pid, int * status);
-time_t time();
-mode_t umask(mode_t mask);
+
+fd_t creat(char *filename, int mode);
+
 int link(char *oldname, char *newname);
 int unlink(char *filename);
+
+time_t time();
+
+pid_t getpid();
+pid_t getppid();
+
+int mkdir(char *pathname, int mode);
+int rmdir(char *pathname);
+
+int32 brk(void * addr);
+
+mode_t umask(mode_t mask);
+
+void yield();
+void sleep(uint32 ms);
+
 #endif // SYSCALL_H

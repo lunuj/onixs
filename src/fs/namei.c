@@ -218,6 +218,177 @@ inode_t *namei(char *pathname)
     return inode;
 }
 
+inode_t *inode_open(char *pathname, int flag, int mode)
+{
+    inode_t *dir = NULL;
+    inode_t *inode = NULL;
+    buffer_t *buf = NULL;
+    dentry_t *entry = NULL;
+    char *next = NULL;
+    
+    dir = named(pathname, &next);
+    if(!dir)
+        goto rollback;
+    if(!*next)
+        goto rollback;
+    if((flag & O_TRUNC) &&((flag & O_ACCMODE) == O_RDONLY))
+        flag |= O_RDWR;
+    
+    char *name = next;
+    buf = find_entry(&dir, name, &next, &entry);
+    if(buf)
+    {
+        inode = iget(dir->dev, entry->nr);
+        goto makeup;
+    }
+
+    if(!(flag & O_CREAT))
+        goto rollback;
+
+    if(!premission(dir, P_WRITE))
+        goto rollback;
+
+    buf = add_entry(dir, name, &entry);
+    entry->nr = ialloc(dir->dev);
+    inode = iget(dir->dev, entry->nr);
+
+    task_t *task = running_task();
+
+    mode &= (0777 & ~task->umask);
+    mode |= IFREG;
+
+    inode->desc->uid = task->uid;
+    inode->desc->gid = task->gid;
+    inode->desc->mode = mode;
+    inode->desc->mtime = time();
+    inode->desc->size = 0;
+    inode->desc->nlinks = 1;
+    inode->buf->dirty = true;
+
+makeup:
+    if(ISDIR(inode->desc->mode) || !premission(inode, flag & O_ACCMODE))
+        goto rollback;
+
+    inode->atime = time();
+    
+    if(flag & O_TRUNC)
+        inode_truncate(inode);
+    
+    brelse(buf);
+    iput(dir);
+    return inode;
+rollback:
+    return NULL;
+}
+
+// 系统调用相关
+int sys_link(char *oldname, char *newname)
+{
+    int ret = EOF;
+    buffer_t *buf = NULL;
+    inode_t *dir = NULL;
+    inode_t *inode = namei(oldname);
+    if(!inode)
+        goto rollback;
+
+    if(ISDIR(inode->desc->mode))
+        goto rollback;
+
+    char *next = NULL;
+    dir = named(newname, &next);
+    if(!dir)
+        goto rollback;
+    
+    if(!(*next))
+        goto rollback;
+    
+    if(dir->dev != inode->dev)
+        goto rollback;
+    
+    if(!premission(dir, P_WRITE))
+        goto rollback;
+
+    char *name = next;
+    dentry_t *entry;
+
+    buf = find_entry(&dir, name, &next, &entry);
+    if(buf)
+        goto rollback;
+
+    buf = find_entry(&dir, name, &next, &entry);
+    if(buf)
+        goto rollback;
+    
+    buf = add_entry(dir, name, &entry);
+    entry->nr = inode->nr;
+    buf->dirty = true;
+
+    inode->desc->nlinks++;
+    inode->ctime = time();
+    inode->buf->dirty = true;
+    ret = 0;
+rollback:
+    brelse(buf);
+    iput(inode);
+    iput(dir);
+    return ret;
+}
+
+int sys_unlink(char *filename)
+{
+    int ret = EOF;
+    char *next = NULL;
+    inode_t *inode = NULL;
+    buffer_t *buf = NULL;
+    inode_t *dir = named(filename, &next);
+    if(!dir)
+        goto rollback;
+    
+    if(!(*next))
+        goto rollback;
+
+    if(!premission(dir, P_WRITE));
+        goto rollback;
+    
+    char *name = next;
+    dentry_t *entry;
+    buf = find_entry(&dir, name, &next, &entry);
+    if(!buf)
+        goto rollback;
+    
+    inode = iget(dir->dev, entry->nr);
+    if(ISDIR(inode->desc->mode))
+        goto rollback;
+
+    task_t *task = running_task();
+    if((inode->desc->mode & ISVTX) && task->uid != inode->desc->uid)
+        goto rollback;
+
+    if(!inode->desc->nlinks)
+        SYS_LOG(LOG_INFO, "deleting non exists file (%04x:%d)\n", inode->dev, inode->nr);
+    
+    entry->nr = 0;
+    buf->dirty = true;
+
+    inode->desc->nlinks--;
+    inode->buf->dirty = true;
+
+    if (inode->desc->nlinks == 0)
+    {
+        inode_truncate(inode);
+        ifree(inode->dev, inode->nr);
+    }
+
+    ret = 0;
+
+rollback:
+    brelse(buf);
+    iput(inode);
+    iput(dir);
+    return ret;
+}
+
+
 int sys_mkdir(char *pathname, int mode)
 {
     char *next = NULL;
@@ -388,173 +559,4 @@ rollback:
     iput(dir);
     brelse(ebuf);
     return ret;
-}
-
-int sys_link(char *oldname, char *newname)
-{
-    int ret = EOF;
-    buffer_t *buf = NULL;
-    inode_t *dir = NULL;
-    inode_t *inode = namei(oldname);
-    if(!inode)
-        goto rollback;
-
-    if(ISDIR(inode->desc->mode))
-        goto rollback;
-
-    char *next = NULL;
-    dir = named(newname, &next);
-    if(!dir)
-        goto rollback;
-    
-    if(!(*next))
-        goto rollback;
-    
-    if(dir->dev != inode->dev)
-        goto rollback;
-    
-    if(!premission(dir, P_WRITE))
-        goto rollback;
-
-    char *name = next;
-    dentry_t *entry;
-
-    buf = find_entry(&dir, name, &next, &entry);
-    if(buf)
-        goto rollback;
-
-    buf = find_entry(&dir, name, &next, &entry);
-    if(buf)
-        goto rollback;
-    
-    buf = add_entry(dir, name, &entry);
-    entry->nr = inode->nr;
-    buf->dirty = true;
-
-    inode->desc->nlinks++;
-    inode->ctime = time();
-    inode->buf->dirty = true;
-    ret = 0;
-rollback:
-    brelse(buf);
-    iput(inode);
-    iput(dir);
-    return ret;
-}
-
-int sys_unlink(char *filename)
-{
-    int ret = EOF;
-    char *next = NULL;
-    inode_t *inode = NULL;
-    buffer_t *buf = NULL;
-    inode_t *dir = named(filename, &next);
-    if(!dir)
-        goto rollback;
-    
-    if(!(*next))
-        goto rollback;
-
-    if(!premission(dir, P_WRITE));
-        goto rollback;
-    
-    char *name = next;
-    dentry_t *entry;
-    buf = find_entry(&dir, name, &next, &entry);
-    if(!buf)
-        goto rollback;
-    
-    inode = iget(dir->dev, entry->nr);
-    if(ISDIR(inode->desc->mode))
-        goto rollback;
-
-    task_t *task = running_task();
-    if((inode->desc->mode & ISVTX) && task->uid != inode->desc->uid)
-        goto rollback;
-
-    if(!inode->desc->nlinks)
-        SYS_LOG(LOG_INFO, "deleting non exists file (%04x:%d)\n", inode->dev, inode->nr);
-    
-    entry->nr = 0;
-    buf->dirty = true;
-
-    inode->desc->nlinks--;
-    inode->buf->dirty = true;
-
-    if (inode->desc->nlinks == 0)
-    {
-        inode_truncate(inode);
-        ifree(inode->dev, inode->nr);
-    }
-
-    ret = 0;
-
-rollback:
-    brelse(buf);
-    iput(inode);
-    iput(dir);
-    return ret;
-}
-
-inode_t *inode_open(char *pathname, int flag, int mode)
-{
-    inode_t *dir = NULL;
-    inode_t *inode = NULL;
-    buffer_t *buf = NULL;
-    dentry_t *entry = NULL;
-    char *next = NULL;
-    
-    dir = named(pathname, &next);
-    if(!dir)
-        goto rollback;
-    if(!*next)
-        goto rollback;
-    if((flag & O_TRUNC) &&((flag & O_ACCMODE) == O_RDONLY))
-        flag |= O_RDWR;
-    
-    char *name = next;
-    buf = find_entry(&dir, name, &next, &entry);
-    if(buf)
-    {
-        inode = iget(dir->dev, entry->nr);
-        goto makeup;
-    }
-
-    if(!(flag & O_CREAT))
-        goto rollback;
-
-    if(!premission(dir, P_WRITE))
-        goto rollback;
-
-    buf = add_entry(dir, name, &entry);
-    entry->nr = ialloc(dir->dev);
-    inode = iget(dir->dev, entry->nr);
-
-    task_t *task = running_task();
-
-    mode &= (0777 & ~task->umask);
-    mode |= IFREG;
-
-    inode->desc->uid = task->uid;
-    inode->desc->gid = task->gid;
-    inode->desc->mode = mode;
-    inode->desc->mtime = time();
-    inode->desc->size = 0;
-    inode->desc->nlinks = 1;
-    inode->buf->dirty = true;
-
-makeup:
-    if(ISDIR(inode->desc->mode) || !premission(inode, flag & O_ACCMODE))
-        goto rollback;
-
-    inode->atime = time();
-    
-    if(flag & O_TRUNC)
-        inode_truncate(inode);
-    
-    brelse(buf);
-    iput(dir);
-    return inode;
-rollback:
-    return NULL;
 }

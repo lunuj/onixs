@@ -86,5 +86,7 @@ void page_fault(
     uint32 ebx, uint32 edx, uint32 ecx, uint32 eax,
     uint32 gs, uint32 fs, uint32 es, uint32 ds,
     uint32 vector0, uint32 error, uint32 eip, uint32 cs, uint32 eflags);
+
+// 系统调用相关
 int32 sys_brk(void * addr);
 #endif // MEMORRY_H

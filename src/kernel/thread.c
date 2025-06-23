@@ -26,30 +26,32 @@ void idle_thread()
 
 static void user_init_thread()
 {
-    uint32 counter = 0;
-    int status;
     // TEST
-    fd_t fd = open("/world.txt", O_CREAT | O_RDWR, 0755);
+    char buf[256];
+    fd_t fd;
+    int len = 0;
+    fd = open("/hello.txt", O_RDWR, 0755);
+    len = read(fd, buf, sizeof(buf));
+    printf("hello.txt content: %s length %d\n", buf, len);
     close(fd);
-    
+
+    memset(buf, 'A', sizeof(buf));
+    fd = open("/hello.txt", O_CREAT | O_RDWR, 0755);
+    len = write(fd, buf, sizeof(buf));
+    close(fd);
+
+    memset(buf, 'B', sizeof(buf));
+    fd = open("/hello.txt", O_CREAT | O_RDWR, 0755);
+    len = read(fd, buf, sizeof(buf));
+    printf("hello.txt content: %s length %d\n", buf, len);
+    close(fd);
+
     while(true)
     {
-        while(1){
-#if 0
-            pid_t pid = fork();
-            if (pid){
-                printf("parent %d %d %d\n", pid, getpid(), getppid());
-                // sleep(1000);
-                pid_t child = waitpid(pid, &status);
-                printf("wait pid %d status %d %d\n", child, status, time());
-            }else{
-                printf("child %d %d %d\n", pid, getpid(), getppid());
-                sleep(2000);
-                exit(0);
-            }
-#endif
-            sleep(1000);
-        }
+        char ch;
+        read(stdin, &ch, 1);
+        write(stdout, &ch, 1);
+        sleep(10);
     }
 }
 
@@ -64,7 +66,7 @@ void test_thread()
     uint32 counter = 0;
     interrupt_enable();
     while(true){
-        test();
+        // test();
         sleep(10);
     }
 }

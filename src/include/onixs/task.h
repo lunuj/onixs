@@ -101,21 +101,35 @@ typedef struct intr_frame_t
 } intr_frame_t;
 
 void task_init();
+
 void schedule();
+
 task_t * running_task();
+
 void task_block(task_t * task, list_t * blist, task_state_t state);
 void task_unblock(task_t * task);
-void task_sleep(uint32 ms);
+
 void task_wakeup();
-void task_yield();
+
 void task_to_user_mode(target_t target);
-pid_t sys_getpid();
-pid_t sys_getppid();
-pid_t task_fork();
-void task_exit(int status);
-pid_t task_waitpid(pid_t pid, int * status);
+
 fd_t task_get_fd(task_t *task);
 void task_put_fd(task_t *task, fd_t fd);
+
+// 系统调用接口
+// task.c
+void task_exit(int status);
+pid_t task_fork();
+
+pid_t task_waitpid(pid_t pid, int * status);
+
+pid_t sys_getpid();
+pid_t sys_getppid();
+
+void task_yield();
+void task_sleep(uint32 ms);
+
+// system.c
+mode_t sys_umask(mode_t mask);
+
 #endif // TASK_H
-
-

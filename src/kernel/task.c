@@ -227,22 +227,6 @@ void task_unblock(task_t * task)
     task->state = TASK_READY;
 }
 
-void task_sleep(uint32 ms)
-{
-    assert(!interrupt_get_state());
-
-    uint32 ticks = ms/jiffy;
-    ticks = ticks > 0 ? ticks : 1;
-
-    task_t * current = running_task();
-    current->ticks = jiffies + ticks;
-
-    list_insert_sort(&sleep_list, &current->node, element_node_offset(task_t, node, ticks));
-    current->state = TASK_SLEEPING;
-
-    schedule();
-}
-
 void task_wakeup()
 {
     assert(!interrupt_get_state());
@@ -259,23 +243,6 @@ void task_wakeup()
         task_unblock(task);
     }
     
-}
-
-void task_yield()
-{
-    schedule();
-}
-
-pid_t sys_getpid()
-{
-    task_t * task = running_task();
-    return task->pid;
-}
-
-pid_t sys_getppid()
-{
-    task_t * task = running_task();
-    return task->ppid;
 }
 
 static void task_build_stack(task_t *task)
@@ -298,34 +265,33 @@ static void task_build_stack(task_t *task)
     task->stack = (uint32 *)frame;
 }
 
-pid_t task_fork()
+
+
+
+fd_t task_get_fd(task_t *task)
 {
-    task_t * task = running_task();
-    assert(task->node.next == NULL && task->node.prev == NULL && task->state == TASK_RUNNING);
-    task_t * children = task_getFreeTask();
-    pid_t pid = children->pid;
-    memcpy(children, task, MEMORY_PAGE_SIZE);
-
-    children->pid = pid;
-    children->ppid = task->pid;
-    children->ticks = children->priority;
-    children->state = TASK_READY;
-
-    // 拷贝用户进程虚拟内存位图
-    children->vmap = kmalloc(sizeof(bitmap_t));
-    memcpy(children->vmap, task->vmap, sizeof(bitmap_t));
-
-    void * buf = (void *)alloc_kpage(1);
-    memcpy(buf, task->vmap->bits, MEMORY_PAGE_SIZE);
-    children->vmap->bits = buf;
-
-    children->pde = (uint32)copy_pde();
-
-    task_build_stack(children);
-
-    return children->pid;
+    fd_t i;
+    for (i = 3; i < TASK_FILE_NR; i++)
+    {
+        if(!task->files[i])
+            break;
+    }
+    if(i==TASK_FILE_NR)
+    {
+        panic("Exceed task max open files");
+    }
+    return i;
 }
 
+void task_put_fd(task_t *task, fd_t fd)
+{
+    if(fd < 3)
+        return;
+    assert(fd < TASK_FILE_NR);
+    task->files[fd] = NULL;
+}
+
+// 系统调用相关
 void task_exit(int status)
 {
     task_t * task = running_task();
@@ -356,6 +322,33 @@ void task_exit(int status)
         task_unblock(parent);
     }
     schedule();
+}
+pid_t task_fork()
+{
+    task_t * task = running_task();
+    assert(task->node.next == NULL && task->node.prev == NULL && task->state == TASK_RUNNING);
+    task_t * children = task_getFreeTask();
+    pid_t pid = children->pid;
+    memcpy(children, task, MEMORY_PAGE_SIZE);
+
+    children->pid = pid;
+    children->ppid = task->pid;
+    children->ticks = children->priority;
+    children->state = TASK_READY;
+
+    // 拷贝用户进程虚拟内存位图
+    children->vmap = kmalloc(sizeof(bitmap_t));
+    memcpy(children->vmap, task->vmap, sizeof(bitmap_t));
+
+    void * buf = (void *)alloc_kpage(1);
+    memcpy(buf, task->vmap->bits, MEMORY_PAGE_SIZE);
+    children->vmap->bits = buf;
+
+    children->pde = (uint32)copy_pde();
+
+    task_build_stack(children);
+
+    return children->pid;
 }
 
 pid_t task_waitpid(pid_t pid, int * status)
@@ -401,25 +394,33 @@ rollback:
     return ret;
 }
 
-fd_t task_get_fd(task_t *task)
+pid_t sys_getpid()
 {
-    fd_t i;
-    for (i = 3; i < TASK_FILE_NR; i++)
-    {
-        if(!task->files[i])
-            break;
-    }
-    if(i==TASK_FILE_NR)
-    {
-        panic("Exceed task max open files");
-    }
-    return i;
+    task_t * task = running_task();
+    return task->pid;
+}
+pid_t sys_getppid()
+{
+    task_t * task = running_task();
+    return task->ppid;
 }
 
-void task_put_fd(task_t *task, fd_t fd)
+void task_yield()
 {
-    if(fd < 3)
-        return;
-    assert(fd < TASK_FILE_NR);
-    task->files[fd] = NULL;
+    schedule();
+}
+void task_sleep(uint32 ms)
+{
+    assert(!interrupt_get_state());
+
+    uint32 ticks = ms/jiffy;
+    ticks = ticks > 0 ? ticks : 1;
+
+    task_t * current = running_task();
+    current->ticks = jiffies + ticks;
+
+    list_insert_sort(&sleep_list, &current->node, element_node_offset(task_t, node, ticks));
+    current->state = TASK_SLEEPING;
+
+    schedule();
 }

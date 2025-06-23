@@ -135,4 +135,22 @@ void inode_truncate(inode_t *inode);
 
 // 打开文件，返回 inode
 inode_t *inode_open(char *pathname, int flag, int mode);
+
+// 系统调用相关
+// file.c
+int sys_read(fd_t fd, char *buf, uint32 len);
+int sys_write(fd_t fd, char *buf, uint32 len);
+
+fd_t sys_open(char *filename, int flags, int mode);
+void sys_close(fd_t fd);
+
+fd_t sys_creat(char *filename, int mode);
+
+// namei.c
+int sys_link(char *oldname, char *newname);
+int sys_unlink(char *filename);
+
+int sys_mkdir(char *pathname, int mode);
+int sys_rmdir(char *pathname);
+
 #endif // FS_H

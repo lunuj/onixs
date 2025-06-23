@@ -1,6 +1,7 @@
 #include <onixs/fs.h>
 #include <onixs/assert.h>
 #include <onixs/task.h>
+#include <onixs/device.h>
 
 #define FILE_NR 128
 
@@ -40,6 +41,57 @@ void file_init()
         file->inode = NULL;
     }
 }
+
+// 系统调用相关
+int sys_read(fd_t fd, char *buf, uint32 len)
+{
+    if(fd == stdin)
+    {
+        device_t *device = device_find(DEV_KEYBOARD, 0);
+        return device_read(device->dev, buf, len, 0, 0);
+    }
+
+    task_t *task = running_task();
+    file_t *file = task->files[fd];
+    
+    assert(file);
+    
+    if ((file->flags & O_ACCMODE)==O_WRONLY)
+        return EOF;
+    
+    inode_t *inode = file->inode;
+    int count = inode_read(inode, buf, len, file->offset);
+    if(count != EOF)
+    {
+        file->offset += count;
+    }
+    return count;
+}
+int sys_write(fd_t fd, char *buf, uint32 len)
+{
+    if(fd == stdout || fd == stderr)
+    {
+        device_t *device = device_find(DEV_CONSOLE, 0);
+        return device_write(device->dev, buf, len, 0, 0);
+    }
+
+    task_t *task = running_task();
+    file_t *file = task->files[fd];
+    
+    assert(file);
+
+    if((file->mode & O_ACCMODE) == O_RDONLY)
+        return EOF;
+    
+    inode_t *inode = file->inode;
+    int count = inode_write(inode, buf, len, file->offset);
+    if(count != EOF)
+    {
+        file->offset += count;
+    }
+    return count;
+}
+
 
 fd_t sys_open(char *filename, int flags, int mode)
 {
