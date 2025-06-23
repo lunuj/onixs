@@ -16,6 +16,7 @@ typedef enum syscall_t{
     SYS_NR_LINK = 9,
     SYS_NR_UNLINK = 10,
     SYS_NR_TIME = 13,
+    SYS_NR_LSEEK = 19,
     SYS_NR_GETPID = 20,
     SYS_NR_MKDIR = 39,
     SYS_NR_RMDIR = 40,
@@ -44,6 +45,8 @@ int link(char *oldname, char *newname);
 int unlink(char *filename);
 
 time_t time();
+
+int lseek(fd_t fd, off_t offset, int whence);
 
 pid_t getpid();
 pid_t getppid();

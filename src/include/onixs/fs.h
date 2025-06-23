@@ -106,6 +106,13 @@ typedef struct file_t
     int mode;
 }file_t;
 
+typedef enum whence_t
+{
+    SEEK_SET = 1,
+    SEEK_CUR,
+    SEEK_END
+}whence_t;
+
 super_block_t *get_super(dev_t dev);  // 获得 dev 对应的超级块
 super_block_t *read_super(dev_t dev); // 读取 dev 对应的超级块
 
@@ -145,6 +152,8 @@ fd_t sys_open(char *filename, int flags, int mode);
 void sys_close(fd_t fd);
 
 fd_t sys_creat(char *filename, int mode);
+
+int sys_lseek(fd_t fd, off_t offset, int whence);
 
 // namei.c
 int sys_link(char *oldname, char *newname);

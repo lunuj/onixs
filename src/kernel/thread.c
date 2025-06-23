@@ -32,18 +32,21 @@ static void user_init_thread()
     int len = 0;
     fd = open("/hello.txt", O_RDWR, 0755);
     len = read(fd, buf, sizeof(buf));
+    buf[255] = '\0';
     printf("hello.txt content: %s length %d\n", buf, len);
     close(fd);
 
-    memset(buf, 'A', sizeof(buf));
+    memset(buf, 'A', sizeof(buf)/2);
+    memset(buf + sizeof(buf)/2, 'B', sizeof(buf)/2);
     fd = open("/hello.txt", O_CREAT | O_RDWR, 0755);
+    lseek(fd, 14, SEEK_SET);
     len = write(fd, buf, sizeof(buf));
     close(fd);
 
-    memset(buf, 'B', sizeof(buf));
     fd = open("/hello.txt", O_CREAT | O_RDWR, 0755);
     len = read(fd, buf, sizeof(buf));
-    printf("hello.txt content: %s length %d\n", buf, len);
+    buf[255] = '\0';
+    printf("hello.txt content: %s length %d\n", buf, len + 13);
     close(fd);
 
     while(true)

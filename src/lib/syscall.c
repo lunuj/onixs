@@ -95,6 +95,11 @@ time_t time()
     return _syscall0(SYS_NR_TIME);
 }
 
+int lseek(fd_t fd, off_t offset, int whence)
+{
+    return _syscall3(SYS_NR_LSEEK, (uint32)fd, (uint32)offset, (uint32)whence);
+}
+
 pid_t getpid(){
     return _syscall0(SYS_NR_GETPID);
 }
