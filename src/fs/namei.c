@@ -281,6 +281,82 @@ rollback:
     return NULL;
 }
 
+/**
+ * @brief  根据pathname相对pwd的路径计算出新的pwd
+ * @param  *pwd 当前工作目录
+ * @param  *pathname 新增工作目录的相对路径或绝对路径
+ * @retval 无
+ * @note 
+ */
+void abspath(char *pwd, const char *pathname)
+{
+    char *cur = NULL;
+    char *ptr = NULL;
+
+    if(IS_SEPARATOR(pathname[0]))   // 如果是根目录则为绝对路径
+    {
+        cur = pwd + 1;
+        *cur = 0;
+        pathname++;
+    }
+    else    // 如果不是根目录则为相对pwd的相对路径
+    {
+        cur = strrsep(pwd) + 1;
+        *cur = 0;
+    }
+
+    while(pathname[0])
+    {
+        ptr = strsep(pathname);
+        if(!ptr)
+        {
+            break;
+        }
+
+        int len = (ptr - pathname) + 1;
+        *ptr = '/';
+        if(!memcmp(pathname, "./", 2))
+        {
+            // do nothing
+        }
+        else if(!memcmp(pathname, "../", 3))
+        {
+            if(cur - 1 != pwd)
+            {
+                *(cur - 1) = 0;
+                cur = strrsep(pwd) + 1;
+                *cur = 0;
+            }
+        }
+        else
+        {
+            strncpy(cur, pathname, len + 1);
+            cur += len;
+        }
+        pathname += len;
+    }
+
+    if(!pathname[0])
+        return;
+
+    if(!strcmp(pathname, "."))
+        return;
+    
+    if(strcmp(pathname, ".."))
+    {
+        strcpy(cur, pathname);
+        cur += strlen(pathname);
+        *cur = '/';
+        return;
+    }
+    if(cur - 1 != pwd)
+    {
+        *(cur - 1) = 0;
+        cur = strrsep(pwd) + 1;
+        *cur = 0;
+    }
+}
+
 // 系统调用相关
 int sys_link(char *oldname, char *newname)
 {
@@ -387,7 +463,26 @@ rollback:
     iput(dir);
     return ret;
 }
+int sys_chdir(char *pathname)
+{
+    task_t *task = running_task();
+    inode_t *inode = namei(pathname);
 
+    if(!inode)
+        goto rollback;
+    if(!ISDIR(inode->desc->mode) || inode == task->ipwd)
+        goto rollback;
+    
+    abspath(task->pwd, pathname);
+
+    iput(task->ipwd);
+    task->ipwd = inode;
+
+    return 0;
+rollback:
+    iput(inode);
+    return EOF;
+}
 
 int sys_mkdir(char *pathname, int mode)
 {
@@ -559,4 +654,30 @@ rollback:
     iput(dir);
     brelse(ebuf);
     return ret;
+}
+
+int sys_chroot(char *pathname)
+{
+    task_t *task = running_task();
+    inode_t *inode = namei(pathname);
+
+    if(!inode)
+        goto rollback;
+    if(!ISDIR(inode->desc->mode) || inode == task->ipwd)
+        goto rollback;
+
+    iput(task->iroot);
+    task->iroot = inode;
+    return 0;
+
+rollback:
+    iput(inode);
+    return EOF;
+}
+
+char *sys_getcwd(char *buf, size_t size)
+{
+    task_t *task = running_task();
+    strncpy(buf, task->pwd, size);
+    return buf;
 }

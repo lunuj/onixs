@@ -28,26 +28,12 @@ static void user_init_thread()
 {
     // TEST
     char buf[256];
-    fd_t fd;
-    int len = 0;
-    fd = open("/hello.txt", O_RDWR, 0755);
-    len = read(fd, buf, sizeof(buf));
-    buf[255] = '\0';
-    printf("hello.txt content: %s length %d\n", buf, len);
-    close(fd);
 
-    memset(buf, 'A', sizeof(buf)/2);
-    memset(buf + sizeof(buf)/2, 'B', sizeof(buf)/2);
-    fd = open("/hello.txt", O_CREAT | O_RDWR, 0755);
-    lseek(fd, 14, SEEK_SET);
-    len = write(fd, buf, sizeof(buf));
-    close(fd);
+    chroot("/d1");
 
-    fd = open("/hello.txt", O_CREAT | O_RDWR, 0755);
-    len = read(fd, buf, sizeof(buf));
-    buf[255] = '\0';
-    printf("hello.txt content: %s length %d\n", buf, len + 13);
-    close(fd);
+    chdir("/d2");
+    getcwd(buf, sizeof(buf));
+    printf("current work directory: %s\n", buf);
 
     while(true)
     {

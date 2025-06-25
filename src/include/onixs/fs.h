@@ -158,8 +158,12 @@ int sys_lseek(fd_t fd, off_t offset, int whence);
 // namei.c
 int sys_link(char *oldname, char *newname);
 int sys_unlink(char *filename);
+int sys_chdir(char *pathname);
 
 int sys_mkdir(char *pathname, int mode);
 int sys_rmdir(char *pathname);
 
+int sys_chroot(char *pathname);
+
+char *sys_getcwd(char *buf, size_t size);
 #endif // FS_H

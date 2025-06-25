@@ -15,6 +15,7 @@ typedef enum syscall_t{
     SYS_NR_CREAT = 8,
     SYS_NR_LINK = 9,
     SYS_NR_UNLINK = 10,
+    SYS_NR_CHDIR = 12,
     SYS_NR_TIME = 13,
     SYS_NR_LSEEK = 19,
     SYS_NR_GETPID = 20,
@@ -22,9 +23,11 @@ typedef enum syscall_t{
     SYS_NR_RMDIR = 40,
     SYS_NR_BRK = 45,
     SYS_NR_UMASK = 60,
+    SYS_NR_CHROOT = 61,
     SYS_NR_GETPPID = 64,
     SYS_NR_YIELD = 158,
     SYS_NR_SLEEP = 162,
+    SYS_NR_GETCWD = 183,
 } syscall_t;
 
 uint32 test();
@@ -43,6 +46,7 @@ fd_t creat(char *filename, int mode);
 
 int link(char *oldname, char *newname);
 int unlink(char *filename);
+int chdir(char *pathname);
 
 time_t time();
 
@@ -57,8 +61,10 @@ int rmdir(char *pathname);
 int32 brk(void * addr);
 
 mode_t umask(mode_t mask);
+int chroot(char *pathname);
 
 void yield();
 void sleep(uint32 ms);
 
+char *getcwd(char *buf, size_t size);
 #endif // SYSCALL_H

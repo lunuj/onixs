@@ -125,8 +125,10 @@ static task_t * task_create(target_t target, const char * name, uint32 priority,
     task->vmap = &kernel_map;
     task->pde = KERNEL_PAGE_DIR;
     task->brk = KERNEL_MEMORY_SIZE;
-    task->iroot = get_root_inode();
-    task->ipwd = get_root_inode();
+    task->pwd = (void *)alloc_kpage(1);
+    strcpy(task->pwd, "/");
+    task->iroot = task->ipwd = get_root_inode();
+    task->iroot->count += 2;
     task->umask = 0022;
 
     task->magic = ONIXS_MAGIC;
@@ -304,6 +306,19 @@ void task_exit(int status)
     free_kpage((uint32)task->vmap->bits, 1);
     kfree(task->vmap);
 
+    free_kpage((uint32)task->pwd, 1);
+    iput(task->ipwd);
+    iput(task->iroot);
+
+    for (size_t i = 0; i < TASK_FILE_NR; i++)
+    {
+        file_t *file = task->files[i];
+        if(file)
+        {
+            close(i);
+        }
+    }
+
     // 将子进程的父进程赋值为自己的父进程
     for (size_t i = 0; i < TASK_NUMBER; i++)
     {
@@ -345,6 +360,19 @@ pid_t task_fork()
     children->vmap->bits = buf;
 
     children->pde = (uint32)copy_pde();
+
+    children->pwd = (char *)alloc_kpage(1);
+    strncpy(children->pwd, task->pwd, MEMORY_PAGE_SIZE);
+
+    task->ipwd->count++;
+    task->iroot->count++;
+
+    for(size_t i = 0; i < TASK_FILE_NR; i++)
+    {
+        file_t *file = children->files[i];
+        if(file)
+            file->count++;
+    }
 
     task_build_stack(children);
 

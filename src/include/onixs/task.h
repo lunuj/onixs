@@ -26,27 +26,28 @@ typedef enum task_state_t{
 typedef void target_t();
 
 typedef struct task_t{
-    uint32 *stack;                  // 内核栈
-    list_node_t node;               // 任务阻塞节点
-    task_state_t state;             // 任务状态
-    uint32 priority;                // 任务优先级
-    int ticks;                      // 剩余时间片
-    uint32 jiffies;                 // 上次执行时全局时间片
-    char name[TASK_NAME_LEN];       // 任务名
-    uint32 uid;                     // 用户id
-    uint32 gid;                     // 用户组 id
-    pid_t pid;                      // 任务 id
-    pid_t ppid;                     // 副任务 id
-    uint32 pde;                     // 页目录物理地址
-    struct bitmap_t * vmap;         // 进程虚拟内存位图
-    uint32 brk;
-    int status;
-    pid_t waitpid;
-    struct inode_t *ipwd;
-    struct inode_t *iroot;
-    uint16 umask;                   // 进程用户权限
-    struct file_t *files[TASK_FILE_NR];
-    uint32 magic;                   // 内核魔术用于检测栈溢出
+    uint32 *stack;                      // 内核栈
+    list_node_t node;                   // 任务阻塞节点
+    task_state_t state;                 // 任务状态
+    uint32 priority;                    // 任务优先级
+    int ticks;                          // 剩余时间片
+    uint32 jiffies;                     // 上次执行时全局时间片
+    char name[TASK_NAME_LEN];           // 任务名
+    uint32 uid;                         // 用户id
+    uint32 gid;                         // 用户组 id
+    pid_t pid;                          // 任务 id
+    pid_t ppid;                         // 副任务 id
+    uint32 pde;                         // 页目录物理地址
+    struct bitmap_t * vmap;             // 进程虚拟内存位图
+    uint32 brk;                         // 进程堆内存最高地址
+    int status;                         // 进程特殊状态
+    pid_t waitpid;                      // 进程等待的pid
+    char *pwd;                          // 进程当前目录
+    struct inode_t *ipwd;               // 进程当前目录 inode program work directory
+    struct inode_t *iroot;              // 进程当前根目录 inode
+    uint16 umask;                       // 进程用户权限
+    struct file_t *files[TASK_FILE_NR]; // 进程文件表
+    uint32 magic;                       // 内核魔术用于检测栈溢出
 } task_t;
 
 typedef struct task_frame_t

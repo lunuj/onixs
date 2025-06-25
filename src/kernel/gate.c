@@ -68,6 +68,7 @@ void syscall_init(){
     syscall_table[SYS_NR_CREAT] = sys_creat;
     syscall_table[SYS_NR_LINK] = sys_link;
     syscall_table[SYS_NR_UNLINK] = sys_unlink;
+    syscall_table[SYS_NR_CHDIR] = sys_chdir;
     syscall_table[SYS_NR_TIME] = sys_time;
     syscall_table[SYS_NR_LSEEK] = sys_lseek;
     syscall_table[SYS_NR_GETPID] = sys_getpid;
@@ -76,6 +77,8 @@ void syscall_init(){
     syscall_table[SYS_NR_RMDIR] = sys_rmdir;
     syscall_table[SYS_NR_BRK] = sys_brk;
     syscall_table[SYS_NR_UMASK] = sys_umask;
+    syscall_table[SYS_NR_CHROOT] = sys_chroot;
     syscall_table[SYS_NR_SLEEP] = task_sleep;
     syscall_table[SYS_NR_YIELD] = task_yield;
+    syscall_table[SYS_NR_GETCWD] = sys_getcwd;
 }

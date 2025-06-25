@@ -89,6 +89,10 @@ int unlink(char *filename)
 {
     return _syscall1(SYS_NR_LINK, (uint32)filename);
 }
+int chdir(char *pathname)
+{
+    return _syscall1(SYS_NR_CHDIR, (uint32)pathname);
+}
 
 time_t time()
 {
@@ -125,6 +129,10 @@ mode_t umask(mode_t mask)
 {
     return _syscall1(SYS_NR_UMASK, (uint32)mask);
 }
+int chroot(char *pathname)
+{
+    return _syscall1(SYS_NR_CHROOT, (uint32)pathname);
+}
 
 void yield()
 {
@@ -133,4 +141,9 @@ void yield()
 void sleep(uint32 ms)
 {
     _syscall1(SYS_NR_SLEEP, ms);
+}
+
+char *getcwd(char *buf, size_t size)
+{
+    return (char *)_syscall2(SYS_NR_GETCWD, (uint32)buf, (uint32)size);
 }
