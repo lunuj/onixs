@@ -162,7 +162,7 @@ int inode_read(inode_t *inode, char *buf, uint32 len, off_t offset)
 {
     assert(ISFILE(inode->desc->mode) || ISDIR(inode->desc->mode));
 
-    if(offset > inode->desc->size)
+    if(offset >= inode->desc->size)
         return EOF;
 
     uint32 begin = offset;

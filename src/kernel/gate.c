@@ -22,27 +22,7 @@ static void sys_default()
 }
 
 static uint32 sys_test(){
-    // LOGK("syscall test...\n");
-    inode_t *inode = inode_open("/hello.txt", O_RDWR | O_CREAT, 0755);
-    assert(inode);
-
-    char *buf = (char *)alloc_kpage(1);
-    int i = inode_read(inode, buf, 1024, 0);
-
-    memset(buf, 'A', 4096);
-    inode_write(inode, buf, 4096, 0);
-
-    iput(inode);
-
-    char ch;
-    device_t *device = device_find(DEV_KEYBOARD, 0);
-    assert(device);
-    device_read(device->dev, &ch, 1, 0, 0);
-
-    device = device_find(DEV_CONSOLE, 0);
-    assert(device);
-    device_write(device->dev, &ch, 1, 0, 0);
-    
+    SYS_LOG(LOG_INFO, "syscall test...\n");
     return 255;
 }
 
@@ -72,12 +52,12 @@ void syscall_init(){
     syscall_table[SYS_NR_TIME] = sys_time;
     syscall_table[SYS_NR_LSEEK] = sys_lseek;
     syscall_table[SYS_NR_GETPID] = sys_getpid;
-    syscall_table[SYS_NR_GETPPID] = sys_getppid;
     syscall_table[SYS_NR_MKDIR] = sys_mkdir;
     syscall_table[SYS_NR_RMDIR] = sys_rmdir;
     syscall_table[SYS_NR_BRK] = sys_brk;
     syscall_table[SYS_NR_UMASK] = sys_umask;
     syscall_table[SYS_NR_CHROOT] = sys_chroot;
+    syscall_table[SYS_NR_GETPPID] = sys_getppid;
     syscall_table[SYS_NR_SLEEP] = task_sleep;
     syscall_table[SYS_NR_YIELD] = task_yield;
     syscall_table[SYS_NR_GETCWD] = sys_getcwd;

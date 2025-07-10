@@ -100,9 +100,9 @@ void memory_init(uint32 maigc, uint32 addr)
         ards_t *ptr = (ards_t *)(addr + 4);
 
         for(size_t i = 0; i < count; i++, ptr++){
-            LOGK("[INFO]: Memory base %#p\n", ptr->base);
-            LOGK("[INFO]: Memory size %#p\n", ptr->size);
-            LOGK("[INFO]: Memory type %d\n", ptr->type);
+            SYS_LOG(LOG_INFO, "Memory base %#p\n", ptr->base);
+            SYS_LOG(LOG_INFO, "Memory size %#p\n", ptr->size);
+            SYS_LOG(LOG_INFO, "Memory type %d\n", ptr->type);
             if(ptr->type == ZONE_VALID && ptr->size > memory_size){
                 memory_base = (uint32)ptr->base;
                 memory_size = (uint32)ptr->size;
@@ -112,7 +112,7 @@ void memory_init(uint32 maigc, uint32 addr)
         uint32 size = *(unsigned int *)addr;
         multi_tag_t * tag = (multi_tag_t *)(addr + 8);
 
-        LOGK("[INFO]: Announced mbi size %#x\n", size);
+        SYS_LOG(LOG_INFO, "Announced mbi size %#x\n", size);
         while(tag->type != MULTIBOOT_TAG_TYPE_END){
             if(tag->type == MULTIBOOT_TAG_TYPE_MMAP)
                 break;
@@ -121,7 +121,7 @@ void memory_init(uint32 maigc, uint32 addr)
         multi_tag_mmap_t * mtag = (multi_tag_mmap_t *)tag;
         multi_mmap_entry_t * entry = mtag->entries;
         while((uint32)entry < (uint32)tag + tag->size){
-            LOGK("[INFO]: Memory base %#p, size %#p, type %d\n", (uint32)entry->addr, (uint32)entry->len, (uint32)entry->type);
+            SYS_LOG(LOG_INFO, "Memory base %#p, size %#p, type %d\n", (uint32)entry->addr, (uint32)entry->len, (uint32)entry->type);
             count++;
             if(entry->type == ZONE_VALID && entry->len > memory_size){
                 memory_base = (uint32)entry->addr;
@@ -133,9 +133,9 @@ void memory_init(uint32 maigc, uint32 addr)
     else{
         panic("[ERROR]: Memory init magic unknow %#p\n", maigc);
     }
-    LOGK("[INFO]: ARDS count %d\n", count);
-    LOGK("[INFO]: Memory base %#p\n", (uint32)memory_base);
-    LOGK("[INFO]: Memory type %#p\n", (uint32)memory_size);
+    SYS_LOG(LOG_INFO, "ARDS count %d\n", count);
+    SYS_LOG(LOG_INFO, "Memory base %#p\n", (uint32)memory_base);
+    SYS_LOG(LOG_INFO, "Memory type %#p\n", (uint32)memory_size);
 
     assert(memory_base == MEMORY_BASE);
     assert((memory_size & 0xFFF) == 0);
@@ -143,8 +143,8 @@ void memory_init(uint32 maigc, uint32 addr)
     total_pages = IDX(memory_size) + IDX(MEMORY_BASE);
     free_pages = IDX(memory_size);
 
-    LOGK("[INFO]: Total_pages %d\n", total_pages);
-    LOGK("[INFO]: Free_pages %d\n", free_pages);
+    SYS_LOG(LOG_INFO, "Total_pages %d\n", total_pages);
+    SYS_LOG(LOG_INFO, "Free_pages %d\n", free_pages);
 
     if(memory_size < KERNEL_MEMORY_SIZE){
         panic("[ERROR]: System memory is %dM too small, at least %dM needed\n", memory_size/MEMORY_BASE, KERNEL_MEMORY_SIZE/MEMORY_BASE);
@@ -154,7 +154,7 @@ void memory_init(uint32 maigc, uint32 addr)
 void memory_map_init(){
     memory_map = (uint8 *)memory_base;
     memory_map_pages  = div_round_up(total_pages, MEMORY_PAGE_SIZE);
-    LOGK("[INFO]: Memory map page count %d\n", memory_map_pages);
+    SYS_LOG(LOG_INFO, "Memory map page count %d\n", memory_map_pages);
     
     free_pages -= memory_map_pages;
     memset((void *) memory_map, 0, memory_map_pages * MEMORY_PAGE_SIZE);
@@ -164,7 +164,7 @@ void memory_map_init(){
         memory_map[i] = 1;
     }
 
-    LOGK("[INFO]: Total pages %d free pages %d\n", total_pages, free_pages);
+    SYS_LOG(LOG_INFO, "Total pages %d free pages %d\n", total_pages, free_pages);
 
     uint32 legnth = (IDX(KERNEL_MEMORY_SIZE) - IDX(MEMORY_BASE)) / 8;
     bitmap_init(&kernel_map, (uint8 *)KERNEL_MAP_BITS, legnth, IDX(MEMORY_BASE));
@@ -220,7 +220,7 @@ static uint32 get_page(){
             free_pages--;
             assert(free_pages >= 0);
             uint32 page = ((uint32)i) << 12;
-            LOGK("[INFO]: Get page %#p\n", page);
+            SYS_LOG(LOG_INFO, "Get page %#p\n", page);
             return page;
         }
     }
@@ -259,7 +259,7 @@ static page_entry_t* get_pte(uint32 vaddr, bool create){
 
     page_entry_t * table = (page_entry_t *)(PDE_MASK | (idx << 12));
     if(!entry->present){
-        LOGK("[INFO]: get and create page table entry for %#p\n", vaddr);
+        SYS_LOG(LOG_INFO, "get and create page table entry for %#p\n", vaddr);
         uint32 page = get_page();
         entry_init(entry, IDX(page));
         memset(table, 0, MEMORY_PAGE_SIZE);
@@ -283,7 +283,7 @@ static void put_page(uint32 addr){
         free_pages++;
     }
     assert(free_pages > 0 && free_pages < total_pages);
-    LOGK("[INFO]: Put page %#p\n", addr);
+    SYS_LOG(LOG_INFO, "Put page %#p\n", addr);
 }
 
 static uint32 scan_page(bitmap_t * map, uint32 count){
@@ -293,7 +293,7 @@ static uint32 scan_page(bitmap_t * map, uint32 count){
         panic("[ERRIR]: scan page error");
     }
     uint32 addr = PAGE(index);
-    LOGK("[INFO]: Scan page %#p count %d\n", addr, count);
+    SYS_LOG(LOG_INFO, "Scan page %#p count %d\n", addr, count);
     return addr;
 }
 
@@ -312,7 +312,7 @@ static void reset_page(bitmap_t * map, uint32 addr, uint32 count){
 uint32 alloc_kpage(uint32 count){
     assert(count > 0);
     uint32 vaddr = scan_page(&kernel_map, count);
-    LOGK("[INFO]: alloc kernel pages %#p count %d\n", vaddr, count);
+    SYS_LOG(LOG_INFO, "alloc kernel pages %#p count %d\n", vaddr, count);
     return vaddr;
 }
 
@@ -320,7 +320,7 @@ void free_kpage(uint32 vaddr, uint32 count){
     ASSERT_PAGE(vaddr);
     assert(count > 0);
     reset_page(&kernel_map, vaddr, count);
-    LOGK("[INFO]: free kernel pages %#p count %d\n", vaddr, count);
+    SYS_LOG(LOG_INFO, "free kernel pages %#p count %d\n", vaddr, count);
 }
 
 void link_page(uint32 vaddr)
@@ -347,7 +347,7 @@ void link_page(uint32 vaddr)
     entry_init(entry, IDX(paddr));
     flush_tlb(vaddr);
 
-    LOGK("[INFO]: LINK from %#p to %#p\n", vaddr, paddr);
+    SYS_LOG(LOG_INFO, "LINK from %#p to %#p\n", vaddr, paddr);
 }
 
 void unlink_page(uint32 vaddr)
@@ -528,7 +528,7 @@ void page_fault(
 
 int32 sys_brk(void * addr)
 {
-    LOGK("[INFO]: task brk %#p\n", addr);
+    SYS_LOG(LOG_INFO, "task brk %#p\n", addr);
 
     uint32 brk = (uint32)addr;
     ASSERT_PAGE(brk);

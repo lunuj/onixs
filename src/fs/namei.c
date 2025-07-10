@@ -230,7 +230,7 @@ inode_t *inode_open(char *pathname, int flag, int mode)
     if(!dir)
         goto rollback;
     if(!*next)
-        goto rollback;
+        return dir;
     if((flag & O_TRUNC) &&((flag & O_ACCMODE) == O_RDONLY))
         flag |= O_RDWR;
     
@@ -266,9 +266,10 @@ inode_t *inode_open(char *pathname, int flag, int mode)
     inode->buf->dirty = true;
 
 makeup:
-    if(ISDIR(inode->desc->mode) || !premission(inode, flag & O_ACCMODE))
+    if(!premission(inode, flag & O_ACCMODE))
         goto rollback;
-
+    if(ISDIR(inode->desc->mode) && ((flag & O_ACCMODE) != O_RDONLY))
+        goto rollback;
     inode->atime = time();
     
     if(flag & O_TRUNC)
@@ -423,7 +424,7 @@ int sys_unlink(char *filename)
     if(!(*next))
         goto rollback;
 
-    if(!premission(dir, P_WRITE));
+    if(!premission(dir, P_WRITE))
         goto rollback;
     
     char *name = next;

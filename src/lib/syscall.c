@@ -87,7 +87,7 @@ int link(char *oldname, char *newname)
 }
 int unlink(char *filename)
 {
-    return _syscall1(SYS_NR_LINK, (uint32)filename);
+    return _syscall1(SYS_NR_UNLINK, (uint32)filename);
 }
 int chdir(char *pathname)
 {
@@ -106,9 +106,6 @@ int lseek(fd_t fd, off_t offset, int whence)
 
 pid_t getpid(){
     return _syscall0(SYS_NR_GETPID);
-}
-pid_t getppid(){
-    return _syscall0(SYS_NR_GETPPID);
 }
 
 int mkdir(char *pathname, int mode)
@@ -133,6 +130,11 @@ int chroot(char *pathname)
 {
     return _syscall1(SYS_NR_CHROOT, (uint32)pathname);
 }
+
+pid_t getppid(){
+    return _syscall0(SYS_NR_GETPPID);
+}
+
 
 void yield()
 {

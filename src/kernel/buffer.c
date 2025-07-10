@@ -79,7 +79,7 @@ static buffer_t *get_new_buffer()
         buffer_count++;
         buffer_ptr++;
         buffer_data -= BLOCK_SIZE;
-        LOGK("[INFO]:buffer count %d\n", buffer_count);
+        SYS_LOG(LOG_INFO,"buffer count %d\n", buffer_count);
     }
 
     return bf;

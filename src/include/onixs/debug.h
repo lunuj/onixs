@@ -8,7 +8,7 @@
 #define LOG_DEBUG   4
 #define LOG_TRACE   5
 
-#define LOG_LV      3
+#define LOG_LV      1
 #define LOG_MAX_LV  5
 
 #define DEBUGK(fmt, args...) debugk(__FILE__, __LINE__, fmt, ##args)

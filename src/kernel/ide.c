@@ -214,7 +214,7 @@ static uint32 ide_identify(ide_disk_t * disk, uint16 * buf)
     ide_busy_wait(disk->ctrl, IDE_SR_NULL);
     ide_params_t * params = (ide_params_t *)buf;
     ide_pio_read_sector(disk, buf);
-    LOGK("[INFO]: disk %s total lba %d\n", disk->name, params->total_lba);
+    SYS_LOG(LOG_INFO, "disk %s total lba %d\n", disk->name, params->total_lba);
 
     uint32 ret = EOF;
     if(params->total_lba == 0)
@@ -223,13 +223,13 @@ static uint32 ide_identify(ide_disk_t * disk, uint16 * buf)
     }
 
     ide_swap_pairs(params->serial, sizeof(params->serial));
-    LOGK("[INFO]: disk %s total lba %s\n", disk->name, params->serial);
+    SYS_LOG(LOG_INFO, "disk %s total lba %s\n", disk->name, params->serial);
 
     ide_swap_pairs(params->firmware, sizeof(params->firmware));
-    LOGK("[INFO]: disk %s firware %s\n", disk->name, params->firmware);
+    SYS_LOG(LOG_INFO, "disk %s firware %s\n", disk->name, params->firmware);
 
     ide_swap_pairs(params->model, sizeof(params->model));
-    LOGK("[INFO]: disk %s model %s\n", disk->name, params->model);
+    SYS_LOG(LOG_INFO, "disk %s model %s\n", disk->name, params->model);
 
     disk->total_lba = params->total_lba;
     disk->cylinders = params->cylinders;
@@ -329,7 +329,7 @@ void ide_handler(int vector)
     send_eoi(vector);
     ide_ctrl_t * ctrl = &controllers[vector - IRQ_HARDDISK - 0x20];
     uint8 state = inb(ctrl->iobase + IDE_STATUS);
-    LOGK("[INFO]: state %d %#x", vector, state);
+    SYS_LOG(LOG_INFO, "state %d %#x", vector, state);
     if(ctrl->waiter)
     {
         task_unblock(ctrl->waiter);
@@ -366,7 +366,7 @@ static void ide_part_init(ide_disk_t *disk, uint16 *buf)
 
         if(entry->system == PART_FS_EXTENDED)
         {
-            LOGK("[INFO]: unsupported extended partition\n");
+            SYS_LOG(LOG_INFO, "unsupported extended partition\n");
 
             boot_sector_t *eboot = (boot_sector_t *)(buf + SECTOR_SIZE);
             ide_pio_read(disk, (void *)eboot, 1, entry->start);
@@ -498,7 +498,7 @@ static void ide_install()
  */
 void ide_init()
 {
-    LOGK("[INFO]: init\n");
+    SYS_LOG(LOG_INFO, "init\n");
     ide_ctrl_init();
     ide_install(); // 安装设备
     interrupt_register(IRQ_HARDDISK, ide_handler);
