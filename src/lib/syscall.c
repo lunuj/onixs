@@ -135,6 +135,10 @@ pid_t getppid(){
     return _syscall0(SYS_NR_GETPPID);
 }
 
+int readdir(fd_t fd, void *dir, uint32 count)
+{
+    return _syscall3(SYS_NR_READDIR, fd, (uint32)dir, (uint32)count);
+}
 
 void yield()
 {
@@ -148,4 +152,9 @@ void sleep(uint32 ms)
 char *getcwd(char *buf, size_t size)
 {
     return (char *)_syscall2(SYS_NR_GETCWD, (uint32)buf, (uint32)size);
+}
+
+void clear()
+{
+    _syscall0(SYS_NR_CLEAR);
 }

@@ -125,7 +125,9 @@ static bool premission(inode_t *inode, uint16 mask)
     {
         mode >>= 6;
     }else if(task->gid == inode->desc->gid)
+    {
         mode >>= 3;
+    }
     
     if((mode & mask & 0b111) == mask)
         return true;

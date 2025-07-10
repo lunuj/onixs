@@ -11,4 +11,6 @@ void hang(bool statu);
 uint8 bcd_to_bin(uint8 value);
 uint8 bin_to_bcd(uint8 value);
 uint32 div_round_up(uint32 num, uint32 size);
+
+int atoi(const char *str);
 #endif // STDLIB_H

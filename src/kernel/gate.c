@@ -58,7 +58,9 @@ void syscall_init(){
     syscall_table[SYS_NR_UMASK] = sys_umask;
     syscall_table[SYS_NR_CHROOT] = sys_chroot;
     syscall_table[SYS_NR_GETPPID] = sys_getppid;
+    syscall_table[SYS_NR_READDIR] = sys_readdir;
     syscall_table[SYS_NR_SLEEP] = task_sleep;
     syscall_table[SYS_NR_YIELD] = task_yield;
     syscall_table[SYS_NR_GETCWD] = sys_getcwd;
+    syscall_table[SYS_NR_CLEAR] = console_clear;
 }

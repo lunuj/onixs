@@ -20,3 +20,21 @@ uint32 div_round_up(uint32 num, uint32 size)
 {
     return (num + size - 1) / size;
 }
+
+int atoi(const char *str)
+{
+    if(str == NULL)
+        return 0;
+    bool sign = 1;
+    int result = 0;
+    if(*str == '-')
+    {
+        sign = -1;
+        str++;
+    }
+    for (; *str; str++)
+    {
+        result = result * 10 + (*str - '0');
+    }
+    return result;
+}

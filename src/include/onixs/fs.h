@@ -97,6 +97,8 @@ typedef struct dentry_t
     char name[NAME_LEN]; // 文件名
 } dentry_t;
 
+typedef dentry_t dirent_t;
+
 typedef struct file_t
 {
     inode_t *inode;
@@ -154,6 +156,8 @@ void sys_close(fd_t fd);
 fd_t sys_creat(char *filename, int mode);
 
 int sys_lseek(fd_t fd, off_t offset, int whence);
+
+int sys_readdir(fd_t fd, dirent_t *dir, uint32 count);
 
 // namei.c
 int sys_link(char *oldname, char *newname);

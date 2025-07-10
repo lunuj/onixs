@@ -7,6 +7,7 @@ FS_DIR		= $(SRC_DIR)/fs
 LIB_DIR		= $(SRC_DIR)/lib
 INCLUDE_DIR = $(SRC_DIR)/include
 UTILS_DIR 	= $(SRC_DIR)/utils
+BUILTIN_DIR = $(SRC_DIR)/builtin
 
 BOOT_NAME	 	= $(patsubst $(SRC_DIR)/%,$(BUILD_DIR)/%,$(BOOT_DIR)/boot.bin)
 LOADER_NAME 	= $(patsubst $(SRC_DIR)/%,$(BUILD_DIR)/%,$(BOOT_DIR)/loader.bin)
@@ -28,6 +29,9 @@ LIB_C_OBJ		= $(patsubst $(SRC_DIR)/%,$(BUILD_DIR)/%,$(LIB_C_SRC:.c=.o))
 
 FS_C_SRC 		= $(wildcard $(FS_DIR)/*.c)
 FS_C_OBJ		= $(patsubst $(SRC_DIR)/%,$(BUILD_DIR)/%,$(FS_C_SRC:.c=.o))
+
+BULTIN_C_SRC 		= $(wildcard $(BUILTIN_DIR)/*.c)
+BUILTIN_C_OBJ		= $(patsubst $(SRC_DIR)/%,$(BUILD_DIR)/%,$(BULTIN_C_SRC:.c=.o))
 
 KERNEL		= $(BUILD_DIR)/kernel.bin
 SYSTEM_BIN	= $(BUILD_DIR)/system.bin
@@ -83,7 +87,11 @@ $(FS_C_OBJ): $(BUILD_DIR)/%.o: %.c
 	$(shell mkdir -p $(dir $@))
 	$(CC) $(CFLAGS) $(DEBUG) $(INCLUDE) -c $< -o $@ 
 
-$(KERNEL): $(KERNEL_ASM_OBJ) $(KERNEL_C_OBJ) $(LIB_ASM_OBJ) $(LIB_C_OBJ) $(FS_C_OBJ)
+$(BUILTIN_C_OBJ): $(BUILD_DIR)/%.o: %.c
+	$(shell mkdir -p $(dir $@))
+	$(CC) $(CFLAGS) $(DEBUG) $(INCLUDE) -c $< -o $@ 
+
+$(KERNEL): $(KERNEL_ASM_OBJ) $(KERNEL_C_OBJ) $(LIB_ASM_OBJ) $(LIB_C_OBJ) $(FS_C_OBJ) $(BUILTIN_C_OBJ)
 	$(LD) $(LDFLAGS) $^ -o $@
 
 $(SYSTEM_BIN): $(KERNEL)
