@@ -5,6 +5,7 @@
 #include <onixs/assert.h>
 #include <onixs/fs.h>
 #include <onixs/stat.h>
+#include <onixs/time.h>
 
 #define MAX_CMD_LEN 256
 #define MAX_ARG_NR 16
@@ -135,6 +136,19 @@ static void parsemode(int mode, char *buf)
     }
 }
 
+static void strftime(time_t stamp, char *buf)
+{
+    tm time;
+    localtime(stamp, &time);
+    sprintf(buf, "%d-%02d-%02d %02d:%02d:%02d",
+            time.tm_year + 1900,
+            time.tm_mon,
+            time.tm_mday,
+            time.tm_hour,
+            time.tm_min,
+            time.tm_sec);
+}
+
 void builtin_ls(int argc, char *argv[])
 {
     fd_t fd = open(cwd, O_RDONLY, 0);
@@ -166,12 +180,13 @@ void builtin_ls(int argc, char *argv[])
         parsemode(statbuf.mode, buf);
         printf("%s ", buf);
 
+        strftime(statbuf.ctime, buf);
         printf("% 2d % 2d % 2d % 2d %s %s\n",
                statbuf.nlinks,
                statbuf.uid,
                statbuf.gid,
                statbuf.size,
-               "NULL",
+               buf,
                entry.name);
     }
     if (!list)
