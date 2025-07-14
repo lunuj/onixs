@@ -2,6 +2,7 @@
 #define SYSCALL_H
 
 #include <onixs/types.h>
+#include <onixs/stat.h>
 
 typedef enum syscall_t{
     SYS_NR_TEST,
@@ -17,8 +18,10 @@ typedef enum syscall_t{
     SYS_NR_UNLINK = 10,
     SYS_NR_CHDIR = 12,
     SYS_NR_TIME = 13,
+    SYS_NR_STAT = 18,
     SYS_NR_LSEEK = 19,
     SYS_NR_GETPID = 20,
+    SYS_NR_FSTAT = 28,
     SYS_NR_MKDIR = 39,
     SYS_NR_RMDIR = 40,
     SYS_NR_BRK = 45,
@@ -51,11 +54,13 @@ int unlink(char *filename);
 int chdir(char *pathname);
 
 time_t time();
-
+int stat(char *filename, stat_t *statbuf);
 int lseek(fd_t fd, off_t offset, int whence);
 
 pid_t getpid();
 pid_t getppid();
+
+int fstat(fd_t fd, stat_t *statbuf);
 
 int mkdir(char *pathname, int mode);
 int rmdir(char *pathname);

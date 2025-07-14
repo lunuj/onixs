@@ -64,4 +64,9 @@ typedef struct stat_t
     time_t ctime; // 最后节点修改时间
 } stat_t;
 
+
+// 系统调用相关
+int sys_stat(char *filename, stat_t *statbuf);
+int sys_fstat(fd_t fd, stat_t *statbuf);
+
 #endif // STAT_H

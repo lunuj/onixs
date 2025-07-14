@@ -99,6 +99,10 @@ time_t time()
     return _syscall0(SYS_NR_TIME);
 }
 
+int stat(char *filename, stat_t *statbuf)
+{
+    return _syscall2(SYS_NR_STAT, (uint32)filename, (uint32)statbuf);
+}
 int lseek(fd_t fd, off_t offset, int whence)
 {
     return _syscall3(SYS_NR_LSEEK, (uint32)fd, (uint32)offset, (uint32)whence);
@@ -106,6 +110,10 @@ int lseek(fd_t fd, off_t offset, int whence)
 
 pid_t getpid(){
     return _syscall0(SYS_NR_GETPID);
+}
+int fstat(fd_t fd, stat_t *statbuf)
+{
+    return _syscall2(SYS_NR_FSTAT, (uint32)fd, (uint32)statbuf);
 }
 
 int mkdir(char *pathname, int mode)

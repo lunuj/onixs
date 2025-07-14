@@ -7,6 +7,7 @@
 #include <onixs/device.h>
 #include <onixs/buffer.h>
 #include <onixs/fs.h>
+#include <onixs/stat.h>
 
 handler_t syscall_table[SYSCALL_SIZE];
 
@@ -50,8 +51,10 @@ void syscall_init(){
     syscall_table[SYS_NR_UNLINK] = sys_unlink;
     syscall_table[SYS_NR_CHDIR] = sys_chdir;
     syscall_table[SYS_NR_TIME] = sys_time;
+    syscall_table[SYS_NR_STAT] = sys_stat;
     syscall_table[SYS_NR_LSEEK] = sys_lseek;
     syscall_table[SYS_NR_GETPID] = sys_getpid;
+    syscall_table[SYS_NR_FSTAT] = sys_fstat;
     syscall_table[SYS_NR_MKDIR] = sys_mkdir;
     syscall_table[SYS_NR_RMDIR] = sys_rmdir;
     syscall_table[SYS_NR_BRK] = sys_brk;

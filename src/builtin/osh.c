@@ -4,6 +4,7 @@
 #include <onixs/stdlib.h>
 #include <onixs/assert.h>
 #include <onixs/fs.h>
+#include <onixs/stat.h>
 
 #define MAX_CMD_LEN 256
 #define MAX_ARG_NR 16
@@ -78,11 +79,70 @@ void builtin_clear()
     clear();
 }
 
-void builtin_ls()
+static void parsemode(int mode, char *buf)
+{
+    memset(buf, '-', 20);
+    buf[10] = '\0';
+    char *ptr = buf;
+
+    switch (mode & IFMT)
+    {
+    case IFREG:
+        *ptr = '-';
+        break;
+    case IFBLK:
+        *ptr = 'b';
+        break;
+    case IFDIR:
+        *ptr = 'd';
+        break;
+    case IFCHR:
+        *ptr = 'c';
+        break;
+    case IFIFO:
+        *ptr = 'p';
+        break;
+    case IFLNK:
+        *ptr = 'l';
+        break;
+    case IFSOCK:
+        *ptr = 's';
+        break;
+    default:
+        *ptr = '?';
+        break;
+    }
+    ptr++;
+
+    for (int i = 6; i >= 0; i-=3)
+    {
+        int fmt = (mode >> i) & 07;
+        if(fmt & 0b100)
+        {
+            *ptr = 'r';
+        }
+        ptr++;
+        if(fmt & 0b010)
+        {
+            *ptr = 'w';
+        }
+        ptr++;
+        if(fmt & 0b01)
+        {
+            *ptr = 'x';
+        }
+        ptr++;    
+    }
+}
+
+void builtin_ls(int argc, char *argv[])
 {
     fd_t fd = open(cwd, O_RDONLY, 0);
     if(fd == EOF)
         return;
+    bool list = false;
+    if(argc >= 2 && !strcmp(argv[1], "-l"))
+        list = true;
     lseek(fd, 0, SEEK_SET);
     dentry_t entry;
     while(true)
@@ -96,9 +156,26 @@ void builtin_ls()
         {
             continue;
         }
-        printf("%s ", entry.name);
+        if(!list)
+        {
+            printf("%s ", entry.name);
+            continue;
+        }
+        stat_t statbuf;
+        stat(entry.name, &statbuf);
+        parsemode(statbuf.mode, buf);
+        printf("%s ", buf);
+
+        printf("% 2d % 2d % 2d % 2d %s %s\n",
+               statbuf.nlinks,
+               statbuf.uid,
+               statbuf.gid,
+               statbuf.size,
+               "NULL",
+               entry.name);
     }
-    printf("\n");
+    if (!list)
+        printf("\n");
     close(fd);
 }
 
@@ -175,7 +252,7 @@ static void execute(int argc, char *argv[])
         exit(code);
     }
     if(!strcmp(line, "ls"))
-        return builtin_ls();
+        return builtin_ls(argc, argv);
     if(!strcmp(line, "cd"))
         return builtin_cd(argc, argv);
     if(!strcmp(line, "cat"))
