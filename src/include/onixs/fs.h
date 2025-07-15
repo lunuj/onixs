@@ -59,7 +59,7 @@ typedef struct inode_t
     struct buffer_t *buf; // inode 描述符对应 buffer
     dev_t dev;            // 设备号
     idx_t nr;             // i 节点号
-    uint32 count;            // 引用计数
+    uint32 count;         // 引用计数
     time_t atime;         // 访问时间
     time_t ctime;         // 修改时间
     list_node_t node;     // 链表结点
@@ -129,6 +129,7 @@ idx_t bmap(inode_t *inode, idx_t block, bool create);
 inode_t *get_root_inode();
 inode_t *iget(dev_t dev, idx_t nr);
 void iput(inode_t *inode);
+inode_t *new_inode(dev_t dev, idx_t nr);
 
 inode_t *named(char *pathname, char **next);
 inode_t *namei(char *pathname);
@@ -145,6 +146,7 @@ void inode_truncate(inode_t *inode);
 // 打开文件，返回 inode
 inode_t *inode_open(char *pathname, int flag, int mode);
 
+void dev_init();
 // 系统调用相关
 // file.c
 int sys_read(fd_t fd, char *buf, uint32 len);
@@ -160,6 +162,7 @@ int sys_lseek(fd_t fd, off_t offset, int whence);
 int sys_readdir(fd_t fd, dirent_t *dir, uint32 count);
 
 // namei.c
+int sys_mknod(char *filename, int mode, int dev);
 int sys_link(char *oldname, char *newname);
 int sys_unlink(char *filename);
 int sys_chdir(char *pathname);
@@ -170,4 +173,6 @@ int sys_rmdir(char *pathname);
 int sys_chroot(char *pathname);
 
 char *sys_getcwd(char *buf, size_t size);
+
+// dev.c
 #endif // FS_H

@@ -51,6 +51,7 @@ void syscall_init(){
     syscall_table[SYS_NR_UNLINK] = sys_unlink;
     syscall_table[SYS_NR_CHDIR] = sys_chdir;
     syscall_table[SYS_NR_TIME] = sys_time;
+    syscall_table[SYS_NR_MKNOD] = sys_mknod;
     syscall_table[SYS_NR_STAT] = sys_stat;
     syscall_table[SYS_NR_LSEEK] = sys_lseek;
     syscall_table[SYS_NR_GETPID] = sys_getpid;

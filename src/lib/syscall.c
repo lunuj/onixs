@@ -98,6 +98,10 @@ time_t time()
 {
     return _syscall0(SYS_NR_TIME);
 }
+int mknod(char *filename, int mode, int dev)
+{
+    return _syscall3(SYS_NR_MKNOD, (uint32)filename, (uint32)mode, (uint32)dev);
+}
 
 int stat(char *filename, stat_t *statbuf)
 {
