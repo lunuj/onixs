@@ -4,7 +4,10 @@
 #include <onixs/device.h>
 #include <onixs/assert.h>
 #include <onixs/string.h>
+#include <onixs/stdlib.h>
 #include <onixs/debug.h>
+#include <onixs/device.h>
+#include <onixs/task.h>
 
 #define SUPER_NR 16
 
@@ -237,6 +240,160 @@ int sys_umount(char *target)
 
 rollback:
     put_super(sb);
+    iput(inode);
+    return ret;
+}
+
+int devmkfs(dev_t dev, uint32 icount)
+{
+    super_block_t *sb = NULL;
+    buffer_t *buf = NULL;
+    int ret = EOF;
+
+    int total_block = device_ioctl(dev, DEV_CMD_SECTOR_COUNT, NULL, 0) / BLOCK_SECS;
+    assert(total_block);
+    assert(icount < total_block);
+    if(!icount)
+    {
+        icount = total_block / 3;
+    }
+
+    sb = get_free_super();
+    sb->dev = dev;
+    sb->count = 1;
+
+    buf = bread(dev, 1);
+    sb->buf = buf;
+    buf->dirty = true;
+
+    super_desc_t *desc = (super_desc_t *)buf->data;
+    sb->desc = desc;
+
+    desc->zones = total_block;
+
+    int inode_blocks = div_round_up(icount * sizeof(inode_desc_t), BLOCK_SIZE);
+    desc->inodes = icount;
+    desc->imap_blocks = div_round_up(icount, BLOCK_BITS);
+
+    int zcount = total_block - desc->imap_blocks - inode_blocks - 2;
+    desc->zmap_blocks = div_round_up(zcount, BLOCK_SIZE);
+
+    desc->firstdatazone = 2 + desc->imap_blocks + desc->zmap_blocks + inode_blocks;
+    desc->log_zone_size = 0;
+    desc->max_size = BLOCK_BITS * TOTAL_BLOCK;
+    desc->magic = MINIX1_MAGIC;
+
+    memset(sb->imaps, 0, sizeof(sb->imaps));
+    memset(sb->zmaps, 0, sizeof(sb->zmaps));
+
+    int idx = 2;
+    for (int  i = 0; i < desc->imap_blocks && i < IMAP_NR; i++)
+    {
+        if ((sb->imaps[i] = bread(dev, idx)))
+        {
+            memset(sb->imaps[i]->data,0, BLOCK_SIZE);
+            sb->imaps[i]->dirty = true;
+            idx++;
+        }
+        else
+        {
+            break;
+        }
+    }
+    
+    for (int i = 0; i < desc->zmap_blocks && i < ZMAP_NR; i++)
+    {
+        if((sb->zmaps[i] = bread(dev, idx)))
+        {
+            memset(sb->zmaps[i]->data, 0, BLOCK_SIZE);
+            sb->zmaps[i]->dirty = true;
+            idx++;
+        }
+        else
+        {
+            break;
+        }
+    }
+
+    balloc(dev);
+
+    ialloc(dev);
+    ialloc(dev);
+
+    int counts[] = 
+    {
+        icount + 1,
+        zcount
+    };
+
+    buffer_t *maps[] = {
+        sb->imaps[desc->imap_blocks - 1],
+        sb->imaps[desc->zmap_blocks - 1]
+    };
+
+
+    for (size_t i = 0; i < 2; i++)
+    {
+        int count = counts[i];
+        buffer_t *map = maps[i];
+        map->dirty = true;
+        int offset = count % (BLOCK_BITS);
+        int begin = (offset / 8);
+        char * ptr = (char *)map->data + begin;
+        memset(ptr + 1, 0xff, BLOCK_SIZE - begin - 1);
+        int bits = 0x80;
+        char data = 0;
+        int remain = 8 - offset % 8;
+        while (remain--)
+        {
+            data |= bits;
+            bits >>= 1;
+        }
+        ptr[0] = data;
+    }
+    
+    task_t *task = running_task();
+    inode_t *iroot = new_inode(dev, 1);
+    sb->iroot = iroot;
+
+    iroot->desc->mode = (0777 & ~task->umask) | IFDIR;
+    iroot->desc->size = sizeof(dentry_t) * 2; // 当前目录和父目录两个目录项
+    iroot->desc->nlinks = 2;                  // 一个是 '.' 一个是 name
+
+    buf = bread(dev, bmap(iroot, 0, true));
+    buf->dirty = true;
+
+    dentry_t * entry = (dentry_t *)buf->data;
+    memset(entry, 0, BLOCK_SIZE);
+
+    strcpy(entry->name, ".");
+    entry->nr = iroot->nr;
+
+    entry++;
+    strcpy(entry->name, "..");
+    entry->nr = iroot->nr;
+
+    brelse(buf);
+    ret = 0;
+}
+
+int sys_mkfs(char *devname, int icount)
+{
+    inode_t *inode = NULL;
+    int ret = EOF;
+
+    inode = namei(devname);
+    if(!inode)
+        goto rollback;
+
+    if(!ISBLK(inode->desc->mode))
+        goto rollback;
+
+    dev_t dev = inode->desc->zone[0];
+    assert(dev);
+
+    ret = devmkfs(dev, icount);
+rollback:
     iput(inode);
     return ret;
 }

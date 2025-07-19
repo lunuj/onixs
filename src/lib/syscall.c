@@ -178,3 +178,8 @@ void clear()
 {
     _syscall0(SYS_NR_CLEAR);
 }
+
+int mkfs(char *devname, int icount)
+{
+    _syscall2(SYS_NR_MKFS, (uint32)devname, (uint32)icount);
+}

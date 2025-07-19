@@ -36,6 +36,7 @@ typedef enum syscall_t{
     SYS_NR_SLEEP = 162,
     SYS_NR_GETCWD = 183,
     SYS_NR_CLEAR = 200,
+    SYS_NR_MKFS = 201,
 } syscall_t;
 
 uint32 test();
@@ -85,4 +86,5 @@ char *getcwd(char *buf, size_t size);
 int readdir(fd_t fd, void *dir, uint32 count);
 
 void clear();
+int mkfs(char *devname, int icount);
 #endif // SYSCALL_H

@@ -68,4 +68,5 @@ void syscall_init(){
     syscall_table[SYS_NR_YIELD] = task_yield;
     syscall_table[SYS_NR_GETCWD] = sys_getcwd;
     syscall_table[SYS_NR_CLEAR] = console_clear;
+    syscall_table[SYS_NR_MKFS] = sys_mkfs;
 }

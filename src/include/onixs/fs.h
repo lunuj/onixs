@@ -167,8 +167,6 @@ int sys_mknod(char *filename, int mode, int dev);
 int sys_link(char *oldname, char *newname);
 int sys_unlink(char *filename);
 int sys_chdir(char *pathname);
-int sys_mount(char *devname, char *dirname, int flags);
-int sys_umount(char *target);
 int sys_mkdir(char *pathname, int mode);
 int sys_rmdir(char *pathname);
 
@@ -176,4 +174,8 @@ int sys_chroot(char *pathname);
 
 char *sys_getcwd(char *buf, size_t size);
 
+// super.c
+int sys_mount(char *devname, char *dirname, int flags);
+int sys_umount(char *target);
+int sys_mkfs(char *devname, int icount);
 #endif // FS_H
