@@ -244,6 +244,20 @@ void builtin_rm(int argc, char *argv[])
     unlink(argv[1]);
 }
 
+void builtin_mount(int argc, char *argv[])
+{
+    if(argc < 3)
+        return;
+    mount(argv[1], argv[2], 0);
+}
+
+void builtin_umount(int argc, char *argv[])
+{
+    if(argc < 2)
+        return;
+    umount(argv[1]);
+}
+
 static void execute(int argc, char *argv[])
 {
     char *line = argv[0];
@@ -278,6 +292,10 @@ static void execute(int argc, char *argv[])
         return builtin_rmdir(argc, argv);
     if(!strcmp(line, "rm"))
         return builtin_rm(argc, argv);
+    if(!strcmp(line, "mount"))
+        return builtin_mount(argc, argv);
+    if(!strcmp(line, "umount"))
+        return builtin_umount(argc, argv);
     printf("osh: command not found: %s\n", argv[0]);
 }
 

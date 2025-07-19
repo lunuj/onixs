@@ -55,7 +55,8 @@ void syscall_init(){
     syscall_table[SYS_NR_STAT] = sys_stat;
     syscall_table[SYS_NR_LSEEK] = sys_lseek;
     syscall_table[SYS_NR_GETPID] = sys_getpid;
-    syscall_table[SYS_NR_FSTAT] = sys_fstat;
+    syscall_table[SYS_NR_MOUNT] = sys_mount;
+    syscall_table[SYS_NR_UMOUNT] = sys_umount;
     syscall_table[SYS_NR_MKDIR] = sys_mkdir;
     syscall_table[SYS_NR_RMDIR] = sys_rmdir;
     syscall_table[SYS_NR_BRK] = sys_brk;

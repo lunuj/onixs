@@ -115,6 +115,14 @@ int lseek(fd_t fd, off_t offset, int whence)
 pid_t getpid(){
     return _syscall0(SYS_NR_GETPID);
 }
+int mount(char *devname, char *dirname, int flags)
+{
+    return _syscall3(SYS_NR_MOUNT, (uint32)devname, (uint32)dirname, (uint32)flags);
+}
+int umount(char *target)
+{
+    return _syscall1(SYS_NR_UMOUNT, (uint32)target);
+}
 int fstat(fd_t fd, stat_t *statbuf)
 {
     return _syscall2(SYS_NR_FSTAT, (uint32)fd, (uint32)statbuf);

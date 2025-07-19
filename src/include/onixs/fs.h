@@ -85,6 +85,7 @@ typedef struct super_block_t
     struct buffer_t *imaps[IMAP_NR]; // inode 位图缓冲
     struct buffer_t *zmaps[ZMAP_NR]; // 块位图缓冲
     dev_t dev;                       // 设备号
+    uint32 count;
     list_t inode_list;               // 使用中 inode 链表
     inode_t *iroot;                  // 根目录 inode
     inode_t *imount;                 // 安装到的 inode
@@ -166,7 +167,8 @@ int sys_mknod(char *filename, int mode, int dev);
 int sys_link(char *oldname, char *newname);
 int sys_unlink(char *filename);
 int sys_chdir(char *pathname);
-
+int sys_mount(char *devname, char *dirname, int flags);
+int sys_umount(char *target);
 int sys_mkdir(char *pathname, int mode);
 int sys_rmdir(char *pathname);
 
@@ -174,5 +176,4 @@ int sys_chroot(char *pathname);
 
 char *sys_getcwd(char *buf, size_t size);
 
-// dev.c
 #endif // FS_H

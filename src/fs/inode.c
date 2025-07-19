@@ -89,6 +89,19 @@ static inline idx_t inode_block(super_block_t *sb, idx_t nr)
     return 2 + sb->desc->imap_blocks + sb->desc->zmap_blocks + (nr -1)/BLOCK_INODES;
 }
 
+static inode_t *fit_inode(inode_t *inode)
+{
+    if(!inode->mount)
+        return inode;
+
+    super_block_t *sb = get_super(inode->mount);
+    assert(sb);
+    iput(inode);
+    inode = sb->iroot;
+    inode->count++;
+    return inode;
+}
+
 inode_t *iget(dev_t dev, idx_t nr)
 {
     inode_t *inode = find_inode(dev, nr);
@@ -96,8 +109,8 @@ inode_t *iget(dev_t dev, idx_t nr)
     {
         inode->count++;
         inode->atime = time();
-
-        return inode;
+        
+        return fit_inode(inode);
     }
 
     super_block_t *sb = get_super(dev);

@@ -35,6 +35,15 @@ static bool match_name(const char *name, const char *entry_name, char **next)
 static buffer_t *find_entry(inode_t **dir, const char *name, char **next, dentry_t **result)
 {
     assert(ISDIR((*dir)->desc->mode));
+
+    if(match_name(name, "..", next) && (*dir)->nr == 1)
+    {
+        super_block_t *sb = get_super((*dir)->dev);
+        inode_t *inode = *dir;
+        (*dir) = sb->imount;
+        (*dir)->count++;
+        iput(inode);
+    }
     uint32 entries = (*dir)->desc->size / sizeof(dentry_t);
 
     idx_t i = 0;
