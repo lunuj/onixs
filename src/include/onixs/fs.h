@@ -148,6 +148,7 @@ void inode_truncate(inode_t *inode);
 inode_t *inode_open(char *pathname, int flag, int mode);
 
 void dev_init();
+int devmkfs(dev_t dev, uint32 icount);
 // 系统调用相关
 // file.c
 int sys_read(fd_t fd, char *buf, uint32 len);

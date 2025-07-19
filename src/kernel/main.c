@@ -16,6 +16,7 @@
 extern void inode_init();
 extern void super_init();
 extern void file_init();
+extern int ramdisk_init();
 
 void kernel_init(){
     console_clear();
@@ -38,6 +39,7 @@ void kernel_init(){
     inode_init();
     super_init();
     file_init();
+    ramdisk_init();
 
     interrupt_enable();
     hang(true);

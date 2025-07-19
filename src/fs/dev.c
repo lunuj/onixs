@@ -2,6 +2,8 @@
 #include <onixs/stat.h>
 #include <onixs/stdio.h>
 #include <onixs/syscall.h>
+#include <onixs/assert.h>
+#include <onixs/fs.h>
 
 void dev_init()
 {
@@ -9,6 +11,15 @@ void dev_init()
 
     device_t *device = NULL;
     
+    device = device_find(DEV_RAMDISK, 0);
+    assert(device);
+    devmkfs(device->dev, 0);
+
+    super_block_t *sb = read_super(device->dev);
+    sb->iroot = iget(device->dev, 1);
+    sb->imount = namei("/dev");
+    sb->imount->mount = device->dev;
+
     device = device_find(DEV_CONSOLE, 0);
     mknod("/dev/console", IFCHR | 0200, device->dev);
 
@@ -30,6 +41,15 @@ void dev_init()
     for (size_t i = 0; true; i++)
     {
         device = device_find(DEV_IDE_PART, i);
+        if(!device)
+            break;
+        sprintf(name, "/dev/%s", device->name);
+        mknod(name, IFBLK | 0600, device->dev);
+    }
+
+    for (size_t i = 0; true; i++)
+    {
+        device = device_find(DEV_RAMDISK, i);
         if(!device)
             break;
         sprintf(name, "/dev/%s", device->name);

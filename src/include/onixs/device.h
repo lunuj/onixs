@@ -20,8 +20,9 @@ enum device_subtype_t
 {
     DEV_CONSOLE = 1,
     DEV_KEYBOARD,
-    DEV_IDE_DISK,    // IDE 磁盘
-    DEV_IDE_PART,    // IDE 磁盘分区
+    DEV_IDE_DISK,       // IDE 磁盘
+    DEV_IDE_PART,       // IDE 磁盘分区
+    DEV_RAMDISK = 5,        // 虚拟磁盘
 };
 
 // 设备控制命令
