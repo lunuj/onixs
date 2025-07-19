@@ -2,6 +2,7 @@
 #include <onixs/assert.h>
 #include <onixs/task.h>
 #include <onixs/device.h>
+#include <onixs/stat.h>
 
 #define FILE_NR 128
 
@@ -31,7 +32,7 @@ void put_file(file_t *file)
 
 void file_init()
 {
-    for (size_t i = 0; i < FILE_NR; i++)
+    for (size_t i = 3; i < FILE_NR; i++)
     {
         file_t *file = &file_table[i];
         file->mode = 0;
@@ -45,22 +46,33 @@ void file_init()
 // 系统调用相关
 int sys_read(fd_t fd, char *buf, uint32 len)
 {
-    if(fd == stdin)
-    {
-        device_t *device = device_find(DEV_KEYBOARD, 0);
-        return device_read(device->dev, buf, len, 0, 0);
-    }
-
     task_t *task = running_task();
     file_t *file = task->files[fd];
-    
     assert(file);
-    
+    int count = 0;
+
     if ((file->flags & O_ACCMODE)==O_WRONLY)
         return EOF;
-    
+
     inode_t *inode = file->inode;
-    int count = inode_read(inode, buf, len, file->offset);
+    if(ISCHR(inode->desc->mode))
+    {
+        assert(inode->desc->zone[0]);
+        count = device_read(inode->desc->zone[0], buf, len, 0, 0);
+        return count;
+    }
+    else if(ISBLK(inode->desc->mode))
+    {
+        assert(inode->desc->zone[0]);
+        assert(file->offset % BLOCK_SIZE == 0);
+        assert(len % BLOCK_BITS == 0);
+        count = device_read(inode->desc->zone[0], buf, len/BLOCK_SIZE,
+                            file->offset/BLOCK_SIZE, 0);
+        return count;
+    }else
+    {
+        count = inode_read(inode, buf, len, file->offset);
+    }
     if(count != EOF)
     {
         file->offset += count;
@@ -69,22 +81,37 @@ int sys_read(fd_t fd, char *buf, uint32 len)
 }
 int sys_write(fd_t fd, char *buf, uint32 len)
 {
-    if(fd == stdout || fd == stderr)
-    {
-        device_t *device = device_find(DEV_CONSOLE, 0);
-        return device_write(device->dev, buf, len, 0, 0);
-    }
-
     task_t *task = running_task();
     file_t *file = task->files[fd];
     
     assert(file);
 
-    if((file->mode & O_ACCMODE) == O_RDONLY)
+    if((file->flags & O_ACCMODE) == O_RDONLY)
         return EOF;
     
+    int count = 0;
     inode_t *inode = file->inode;
-    int count = inode_write(inode, buf, len, file->offset);
+    assert(inode);
+
+    if(ISCHR(inode->desc->mode))
+    {
+        assert(inode->desc->zone[0]);
+        count = device_write(inode->desc->zone[0], buf, len, 0, 0);
+        return count;
+    }
+    else if(ISBLK(inode->desc->mode))
+    {
+        assert(inode->desc->zone[0]);
+        assert(file->offset % BLOCK_SIZE == 0);
+        assert(len % BLOCK_SIZE == 0);
+        device_write(inode->desc->zone[0], buf, len/BLOCK_SIZE, file->offset/BLOCK_SIZE, 0);
+        return count;
+    }
+    else
+    {
+        count = inode_write(inode, buf, len, file->offset);
+
+    }
     if(count != EOF)
     {
         file->offset += count;

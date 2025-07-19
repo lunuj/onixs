@@ -218,7 +218,7 @@ void builtin_cat(int argc, char *argv[])
         int len = read(fd, buf, BUFLEN);
         if(len == EOF)
             break;
-        write(stdout, buf, len);
+        write(STDOUT_FILENO, buf, len);
     }
     close(fd);
 }
@@ -317,7 +317,7 @@ void readline(char *buf, uint32 count)
     while(idx < count)
     {
         ptr = buf + idx;
-        int ret = read(stdin, ptr, 1);
+        int ret = read(STDIN_FILENO, ptr, 1);
         if(ret == -1)
         {
             *ptr = 0;
@@ -329,20 +329,20 @@ void readline(char *buf, uint32 count)
         case '\r':
             *ptr = 0;
             ch = '\n';
-            write(stdout, &ch, 1);
+            write(STDOUT_FILENO, &ch, 1);
             return;
         case '\b':
             if(buf[0] != '\b')
             {
                 idx--;
                 ch = '\b';
-                write(stdout, &ch, 1);
+                write(STDOUT_FILENO, &ch, 1);
             }
             break;
         case '\t':
             continue;
         default:
-            write(stdout, ptr, 1);
+            write(STDOUT_FILENO, ptr, 1);
             idx++;
             break;
         }

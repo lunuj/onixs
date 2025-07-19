@@ -10,6 +10,7 @@
 #include <onixs/fs.h>
 
 extern tss_t tss;
+extern file_t file_table[];
 
 static list_t block_list;            // 任务默认阻塞链表
 static list_t sleep_list;
@@ -130,6 +131,13 @@ static task_t * task_create(target_t target, const char * name, uint32 priority,
     task->iroot = task->ipwd = get_root_inode();
     task->iroot->count += 2;
     task->umask = 0022;
+
+    task->files[STDIN_FILENO] = &file_table[STDIN_FILENO];
+    task->files[STDOUT_FILENO] = &file_table[STDOUT_FILENO];
+    task->files[STDERR_FILENO] = &file_table[STDERR_FILENO];
+    task->files[STDIN_FILENO]->count++;
+    task->files[STDOUT_FILENO]->count++;
+    task->files[STDERR_FILENO]->count++;
 
     task->magic = ONIXS_MAGIC;
 

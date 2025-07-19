@@ -39,9 +39,9 @@ typedef int32 pid_t;
 typedef int32 off_t;
 typedef enum std_fd_t
 {
-    stdin,
-    stdout,
-    stderr,
+    STDIN_FILENO,
+    STDOUT_FILENO,
+    STDERR_FILENO,
 }std_fd_t;
 
 #endif // TYPES_H
