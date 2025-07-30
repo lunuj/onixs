@@ -36,9 +36,17 @@
 #define KERNEL_RAMDISK_MEM (KERNEL_BUFFER_MEM + KERNEL_BUFFER_SIZE)
 // 内存虚拟磁盘大小
 #define KERNEL_RAMDISK_SIZE 0x400000
-
+// 用户程序地址
+#define USER_EXEC_ADDR KERNEL_MEMORY_SIZE
+// 用户映射内存开始位置
+#define USER_MMAP_ADDR 0x8000000
+// 用户映射内存大小
+#define USER_MMAP_SIZE 0x8000000
+// 用户栈顶地址
+#define USER_STACK_TOP 0x10000000
+// 用户栈大小
 #define USER_STACK_SIZE 0x200000
-#define USER_STACK_TOP 0x8000000
+// 用户栈底地址
 #define USER_STACK_BOTTOM (USER_STACK_TOP - USER_STACK_SIZE)
 
 #define IDX(addr) ((uint32)addr >> 12)
@@ -64,7 +72,9 @@ typedef struct page_entry_t{
     uint8 dirty : 1;    // 脏页，表示该页缓冲被写过
     uint8 pat : 1;      // page attribute table 页大小 4K/4M
     uint8 global : 1;   // 全局，所有进程都用到了，该页不刷新缓冲
-    uint8 ignored : 3;  // 该安排的都安排了，送给操作系统吧
+    uint8 shared : 1;   // 共享内存页 CPU无关
+    uint8 privat : 1;   // 私有内存页 CPU无关
+    uint8 flag : 1;     // 
     uint32 index : 20;  // 页索引
 }_packed page_entry_t;
 
@@ -86,7 +96,10 @@ void page_fault(
     uint32 ebx, uint32 edx, uint32 ecx, uint32 eax,
     uint32 gs, uint32 fs, uint32 es, uint32 ds,
     uint32 vector0, uint32 error, uint32 eip, uint32 cs, uint32 eflags);
-
+page_entry_t *get_entry(uint32 vaddr, bool create);
+void flush_tlb(uint32 vaddr);
+void *sys_mmap(void *addr, size_t length, int prot, int flags, int fd, off_t offset);
+int sys_munmap(void *addr, size_t length);
 // 系统调用相关
 int32 sys_brk(void * addr);
 #endif // MEMORRY_H

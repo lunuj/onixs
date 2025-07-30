@@ -32,12 +32,27 @@ typedef enum syscall_t{
     SYS_NR_CHROOT = 61,
     SYS_NR_GETPPID = 64,
     SYS_NR_READDIR = 89,
+    SYS_NR_MMAP = 90,
+    SYS_NR_MUNMAP = 91,
     SYS_NR_YIELD = 158,
     SYS_NR_SLEEP = 162,
     SYS_NR_GETCWD = 183,
     SYS_NR_CLEAR = 200,
     SYS_NR_MKFS = 201,
 } syscall_t;
+
+enum mmap_type_t
+{
+    PROT_NONE = 0,
+    PROT_READ = 1,
+    PROT_WRITE = 2,
+    PROT_EXEC = 4,
+
+    MAP_SHARED = 1,
+    MAP_PRIBATE = 2,
+    MAP_FIXED = 0x10,
+};
+
 
 uint32 test();
 void exit(int status);
@@ -84,6 +99,8 @@ void sleep(uint32 ms);
 char *getcwd(char *buf, size_t size);
 
 int readdir(fd_t fd, void *dir, uint32 count);
+void *mmap(void *addr, size_t length, int port, int flags, int fd, off_t offset);
+int munmap(void *addr, size_t length);
 
 void clear();
 int mkfs(char *devname, int icount);

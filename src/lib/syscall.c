@@ -40,6 +40,43 @@ static _inline uint32 _syscall3(uint32 nr, uint32 arg1, uint32 arg2, uint32 arg3
     return ret;
 }
 
+static _inline uint32 _syscall4(uint32 nr, uint32 arg1, uint32 arg2,
+                                uint32 arg3, uint32 arg4)
+{
+    uint32 ret;
+    asm volatile(
+        "int $0x80\n"
+        : "=a"(ret)
+        : "a"(nr),"b"(arg1),"c"(arg2),"d"(arg3), "S"(arg4));
+    return ret;
+}
+
+static _inline uint32 _syscall5(uint32 nr, uint32 arg1, uint32 arg2,
+                                uint32 arg3, uint32 arg4, uint32 arg5)
+{
+    uint32 ret;
+    asm volatile(
+        "int $0x80\n"
+        : "=a"(ret)
+        : "a"(nr),"b"(arg1),"c"(arg2),"d"(arg3), "S"(arg4), "D"(arg5));
+    return ret;
+}
+
+static _inline uint32 _syscall6(uint32 nr, uint32 arg1, uint32 arg2,
+                                uint32 arg3, uint32 arg4, uint32 arg5, uint32 arg6)
+{
+    uint32 ret;
+    asm volatile(
+        "pushl %%ebp\n"
+        "movl %7, %%ebp\n"
+        "int $0x80\n"
+        "popl %%ebp" 
+        : "=a"(ret)
+        : "a"(nr),"b"(arg1),"c"(arg2),"d"(arg3), "S"(arg4), "D"(arg5), "m"(arg6));
+    return ret;
+}
+
+
 uint32 test()
 {
     return _syscall0(SYS_NR_TEST);
@@ -158,6 +195,15 @@ pid_t getppid(){
 int readdir(fd_t fd, void *dir, uint32 count)
 {
     return _syscall3(SYS_NR_READDIR, fd, (uint32)dir, (uint32)count);
+}
+void *mmap(void *addr, size_t length, int prot, int flags, int fd, off_t offset)
+{
+    return (void *)_syscall6(SYS_NR_MMAP, (uint32)addr, (uint32)length,
+                                (uint32)prot, (uint32)flags, (uint32)fd, (uint32)offset);
+}
+int munmap(void *addr, size_t length)
+{
+    return _syscall2(SYS_NR_MUNMAP, (uint32)addr, (uint32)length);
 }
 
 void yield()
