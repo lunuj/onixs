@@ -2,7 +2,7 @@
 #include <onixs/syscall.h>
 #include <onixs/task.h>
 #include <onixs/console.h>
-#include <onixs/memorry.h>
+#include <onixs/memory.h>
 #include <onixs/clock.h>
 #include <onixs/device.h>
 #include <onixs/buffer.h>

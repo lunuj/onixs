@@ -5,7 +5,7 @@
 #include <onixs/stdlib.h>
 #include <onixs/assert.h>
 #include <onixs/io.h>
-#include <onixs/memorry.h>
+#include <onixs/memory.h>
 #include <onixs/printk.h>
 
 gate_t idt[IDT_SIZE];

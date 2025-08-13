@@ -3,7 +3,7 @@
 #include <onixs/types.h>
 #include <onixs/task.h>
 #include <onixs/global.h>
-#include <onixs/memorry.h>
+#include <onixs/memory.h>
 #include <onixs/interrupt.h>
 #include <onixs/syscall.h>
 #include <onixs/arena.h>

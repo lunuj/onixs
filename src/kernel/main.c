@@ -2,7 +2,7 @@
 #include <onixs/console.h>
 #include <onixs/debug.h>
 #include <onixs/interrupt.h>
-#include <onixs/memorry.h>
+#include <onixs/memory.h>
 #include <onixs/task.h>
 #include <onixs/clock.h>
 #include <onixs/gate.h>

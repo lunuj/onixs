@@ -1,7 +1,7 @@
 #include <onixs/ide.h>
 #include <onixs/debug.h>
 #include <onixs/stdio.h>
-#include <onixs/memorry.h>
+#include <onixs/memory.h>
 #include <onixs/io.h>
 #include <onixs/interrupt.h>
 #include <onixs/task.h>

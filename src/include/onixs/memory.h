@@ -1,7 +1,7 @@
-#ifndef MEMORRY_H
-#define MEMORRY_H
+#ifndef MEMORY_H
+#define MEMORY_H
 
-#include <onixs/memorry.h>
+#include <onixs/memory.h>
 #include <onixs/debug.h>
 #include <onixs/assert.h>
 #include <onixs/types.h>
@@ -102,4 +102,4 @@ void *sys_mmap(void *addr, size_t length, int prot, int flags, int fd, off_t off
 int sys_munmap(void *addr, size_t length);
 // 系统调用相关
 int32 sys_brk(void * addr);
-#endif // MEMORRY_H
+#endif // MEMORY_H

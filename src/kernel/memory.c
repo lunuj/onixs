@@ -1,4 +1,4 @@
-#include <onixs/memorry.h>
+#include <onixs/memory.h>
 #include <onixs/multiboot2.h>
 #include <onixs/task.h>
 #include <onixs/syscall.h>

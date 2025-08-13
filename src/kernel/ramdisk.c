@@ -1,4 +1,4 @@
-#include <onixs/memorry.h>
+#include <onixs/memory.h>
 #include <onixs/debug.h>
 #include <onixs/string.h>
 #include <onixs/stdio.h>

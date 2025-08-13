@@ -1,5 +1,5 @@
 #include <onixs/arena.h>
-#include <onixs/memorry.h>
+#include <onixs/memory.h>
 #include <onixs/string.h>
 #include <onixs/stdlib.h>
 #include <onixs/assert.h>

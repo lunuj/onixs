@@ -1,5 +1,5 @@
 #include <onixs/buffer.h>
-#include <onixs/memorry.h>
+#include <onixs/memory.h>
 #include <onixs/device.h>
 #include <onixs/task.h>
 
