@@ -16,6 +16,7 @@ typedef enum syscall_t{
     SYS_NR_CREAT = 8,
     SYS_NR_LINK = 9,
     SYS_NR_UNLINK = 10,
+    SYS_NR_EXECVE = 11,
     SYS_NR_CHDIR = 12,
     SYS_NR_TIME = 13,
     SYS_NR_MKNOD = 14,
@@ -70,6 +71,7 @@ fd_t creat(char *filename, int mode);
 
 int link(char *oldname, char *newname);
 int unlink(char *filename);
+int execve(char *filename, char *argv[], char *envp[]);
 int chdir(char *pathname);
 
 time_t time();

@@ -399,9 +399,14 @@ static int cmd_parse(char *cmd, char *argv[], char token)
     argv[argc] = NULL;
     return argc;
 }
-
+#include "hello.h"
 int osh_main()
 {
+    fd_t fd = open("/hello.txt", O_RDWR, 0);
+    write(fd, hello, 4680);
+    close(fd);
+
+    execve("/hello.txt", NULL, NULL);
     memset(cmd, 0, sizeof(cmd));
     memset(cwd, 0, sizeof(cwd));
 

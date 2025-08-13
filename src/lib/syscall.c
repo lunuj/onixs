@@ -126,6 +126,10 @@ int unlink(char *filename)
 {
     return _syscall1(SYS_NR_UNLINK, (uint32)filename);
 }
+int execve(char *filename, char *argv[], char *envp[])
+{
+    return _syscall3(SYS_NR_EXECVE, (uint32)filename, (uint32)argv, (uint32)envp);
+}
 int chdir(char *pathname)
 {
     return _syscall1(SYS_NR_CHDIR, (uint32)pathname);

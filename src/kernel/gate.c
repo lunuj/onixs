@@ -32,6 +32,7 @@ time_t sys_time()
 {
     return startup_time + (jiffies * JIFFY) /1000;
 }
+extern int sys_execve(char *filename, char *argv[], char *envp[]);
 
 void syscall_init(){
     for (size_t i = 0; i < SYSCALL_SIZE; i++)
@@ -49,6 +50,7 @@ void syscall_init(){
     syscall_table[SYS_NR_CREAT] = sys_creat;
     syscall_table[SYS_NR_LINK] = sys_link;
     syscall_table[SYS_NR_UNLINK] = sys_unlink;
+    syscall_table[SYS_NR_EXECVE] = sys_execve;
     syscall_table[SYS_NR_CHDIR] = sys_chdir;
     syscall_table[SYS_NR_TIME] = sys_time;
     syscall_table[SYS_NR_MKNOD] = sys_mknod;
