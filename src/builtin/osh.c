@@ -284,6 +284,24 @@ void builtin_mkfs(int argc, char *argv[])
     mkfs(argv[1], 0);
 }
 
+void builtin_exec(int argc, char *argvp[])
+{
+    if(argc < 2)
+        return;
+    int status;
+    pid_t pid = fork();
+    if(pid)
+    {
+        pid_t child = waitpid(pid, &status);
+        printf("wait pid %d status %d %d", child, status, time());
+    }
+    else
+    {
+        int i = execve(argv[1], NULL, NULL);
+        exit(i);
+    }
+}
+
 static void execute(int argc, char *argv[])
 {
     char *line = argv[0];
@@ -324,6 +342,8 @@ static void execute(int argc, char *argv[])
         return builtin_umount(argc, argv);
     if(!strcmp(line, "mkfs"))
         return builtin_mkfs(argc, argv);
+    if (!strcmp(line, "exec"))
+        return builtin_exec(argc, argv);
     printf("osh: command not found: %s\n", argv[0]);
 }
 
@@ -403,10 +423,9 @@ static int cmd_parse(char *cmd, char *argv[], char token)
 int osh_main()
 {
     fd_t fd = open("/hello.txt", O_RDWR, 0);
-    write(fd, hello, 4680);
+    write(fd, hello, 8676);
     close(fd);
 
-    execve("/hello.txt", NULL, NULL);
     memset(cmd, 0, sizeof(cmd));
     memset(cwd, 0, sizeof(cwd));
 

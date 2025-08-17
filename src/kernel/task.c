@@ -125,11 +125,17 @@ static task_t * task_create(target_t target, const char * name, uint32 priority,
     task->gid = 0;  // TODO
     task->vmap = &kernel_map;
     task->pde = KERNEL_PAGE_DIR;
-    task->brk = KERNEL_MEMORY_SIZE;
+    task->brk = USER_EXEC_ADDR;
+    task->text = USER_EXEC_ADDR;
+    task->data = USER_EXEC_ADDR;
+    task->end = USER_EXEC_ADDR;
+    task->iexec = NULL;
     task->pwd = (void *)alloc_kpage(1);
     strcpy(task->pwd, "/");
     task->iroot = task->ipwd = get_root_inode();
     task->iroot->count += 2;
+    if (task->iexec)
+        task->iexec->count++;
     task->umask = 0022;
 
     task->files[STDIN_FILENO] = &file_table[STDIN_FILENO];
@@ -198,6 +204,9 @@ void task_to_user_mode(target_t target)
 }
 
 void task_init(){
+    task_t *task = (task_t *)(0xf000);
+    task->magic = ONIXS_MAGIC;
+    task->pid = 99;
     list_init(&block_list);
     list_init(&sleep_list);
     task_setup();
@@ -317,7 +326,8 @@ void task_exit(int status)
     free_kpage((uint32)task->pwd, 1);
     iput(task->ipwd);
     iput(task->iroot);
-
+    iput(task->iexec);
+    
     for (size_t i = 0; i < TASK_FILE_NR; i++)
     {
         file_t *file = task->files[i];

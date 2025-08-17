@@ -5,6 +5,9 @@
 #include <onixs/string.h>
 #include <onixs/assert.h>
 #include <onixs/debug.h>
+#include <onixs/stdlib.h>
+#include <onixs/task.h>
+#include <onixs/string.h>
 
 #if 0
 #include <elf.h>
@@ -194,6 +197,152 @@ enum SymbolType
     STT_HIPROC = 15, // 处理器相关
 };
 
+static bool elf_validate(Elf32_Ehdr *ehdr)
+{
+    // 不是 ELF 文件
+    if (memcmp(&ehdr->e_ident, "\177ELF\1\1\1", 7))
+        return false;
+    // 不是可执行文件
+    if (ehdr->e_type != ET_EXEC)
+        return false;
+    // 不是 386 程序
+    if (ehdr->e_machine != EM_386)
+        return false;
+    // 版本不可识别
+    if (ehdr->e_version != EV_CURRENT)
+        return false;
+    if (ehdr->e_phentsize != sizeof(Elf32_Phdr))
+        return false;
+    return true;
+}
+
+static void load_segment(inode_t *inode, Elf32_Phdr *phdr)
+{
+    assert(phdr->p_align == 0x1000);      // 对齐到页
+    assert((phdr->p_vaddr & 0xfff) == 0); // 对齐到页
+
+    uint32 vaddr = phdr->p_vaddr;
+
+    // 需要页的数量
+    uint32 count = div_round_up(MAX(phdr->p_memsz, phdr->p_filesz), MEMORY_PAGE_SIZE);
+
+    for (size_t i = 0; i < count; i++)
+    {
+        uint32 addr = vaddr + i * MEMORY_PAGE_SIZE;
+        assert(addr >= USER_EXEC_ADDR && addr < USER_MMAP_ADDR);
+        link_page(addr);
+    }
+
+    inode_read(inode, (char *)vaddr, phdr->p_filesz, phdr->p_offset);
+    if (phdr->p_filesz < phdr->p_memsz)
+    {
+        memset((char *)vaddr + phdr->p_filesz, 0, phdr->p_memsz - phdr->p_filesz);
+    }
+
+    // 如果段不可写，则置为只读
+    if ((phdr->p_flags & PF_W) == 0)
+    {
+        for (size_t i = 0; i < count; i++)
+        {
+            uint32 addr = vaddr + i * MEMORY_PAGE_SIZE;
+            page_entry_t *entry = get_entry(addr, false);
+            entry->write = false;
+            entry->readonly = true;
+            flush_tlb(addr);
+        }
+    }
+
+    task_t *task = running_task();
+    if (phdr->p_flags == (PF_R | PF_X))
+    {
+        task->text = vaddr;
+    }
+    else if (phdr->p_flags == (PF_R | PF_W))
+    {
+        task->data = vaddr;
+    }
+
+    task->end = MAX(task->end, (vaddr + count * MEMORY_PAGE_SIZE));
+}
+
+static uint32 load_elf(inode_t *inode)
+{
+    link_page(USER_EXEC_ADDR);
+
+    int n = 0;
+    // 读取 ELF 文件头
+    n = inode_read(inode, (char *)USER_EXEC_ADDR, sizeof(Elf32_Ehdr), 0);
+    assert(n == sizeof(Elf32_Ehdr));
+
+    Elf32_Ehdr *ehdr = (Elf32_Ehdr *)USER_EXEC_ADDR;
+    if (!elf_validate(ehdr))
+        return EOF;
+
+    // 读取程序段头表
+    Elf32_Phdr *phdr = (Elf32_Phdr *)(USER_EXEC_ADDR + sizeof(Elf32_Ehdr));
+    n = inode_read(inode, (char *)phdr, ehdr->e_phnum * ehdr->e_phentsize, ehdr->e_phoff);
+
+    Elf32_Phdr *ptr = phdr;
+    for (size_t i = 0; i < ehdr->e_phnum; i++)
+    {
+        if (ptr->p_type != PT_LOAD)
+            continue;
+        load_segment(inode, ptr);
+        ptr++;
+    }
+
+    return ehdr->e_entry;
+}
+#if 1
+int sys_execve(char *filename, char *argv[], char *envp[])
+{
+    inode_t *inode = namei(filename);
+    int ret = EOF;
+    if (!inode)
+        goto rollback;
+    // 不是常规文件
+    if (!ISFILE(inode->desc->mode))
+        goto rollback;
+    // 文件不可执行
+    if (!permission(inode, P_EXEC))
+        goto rollback;
+
+    task_t *task = running_task();
+    strncpy(task->name, filename, TASK_NAME_LEN);
+
+    // TODO 处理参数和环境变量
+
+    // 首先释放原程序的堆内存
+    task->end = USER_EXEC_ADDR;
+    sys_brk((void *)USER_EXEC_ADDR);
+
+    // 加载程序
+    uint32 entry = load_elf(inode);
+    if (entry == EOF)
+        goto rollback;
+
+    // 设置堆内存地址
+    sys_brk((void *)task->end);
+
+    iput(task->iexec);
+    task->iexec = inode;
+
+    intr_frame_t *iframe = (intr_frame_t *)((uint32)task + MEMORY_PAGE_SIZE - sizeof(intr_frame_t));
+
+    iframe->eip = entry;
+    iframe->esp = (uint32)USER_STACK_TOP;
+
+    // ROP 技术，直接从中断返回
+    // 通过 eip 跳转到 entry 执行
+    asm volatile(
+        "movl %0, %%esp\n"
+        "jmp interrupt_exit\n" ::"m"(iframe));
+
+rollback:
+    iput(inode);
+    return ret;
+}
+#elif 
 int sys_execve(char *filename, char *argv[], char *envp[])
 {
     fd_t fd = open(filename, O_RDONLY, 0);
@@ -316,3 +465,4 @@ int sys_execve(char *filename, char *argv[], char *envp[])
 
     return 0;
 }
+#endif

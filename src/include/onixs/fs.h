@@ -28,6 +28,10 @@
 #define IMAP_NR 8
 #define ZMAP_NR 8
 
+#define P_EXEC IXOTH
+#define P_READ IROTH
+#define P_WRITE IWOTH
+
 enum file_flag
 {
     O_RDONLY = 00,      // 只读方式
@@ -135,6 +139,7 @@ inode_t *new_inode(dev_t dev, idx_t nr);
 inode_t *named(char *pathname, char **next);
 inode_t *namei(char *pathname);
 
+bool permission(inode_t *inode, uint16 mask);
 // 从 inode 的 offset 处，读 len 个字节到 buf
 int inode_read(inode_t *inode, char *buf, uint32 len, off_t offset);
 

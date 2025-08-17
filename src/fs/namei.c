@@ -8,10 +8,6 @@
 #include <onixs/stat.h>
 #include <onixs/task.h>
 
-#define P_EXEC IXOTH
-#define P_READ IROTH
-#define P_WRITE IWOTH
-
 static bool match_name(const char *name, const char *entry_name, char **next)
 {
     char *lhs = (char *)name;
@@ -120,7 +116,7 @@ static buffer_t *add_entry(inode_t *dir, const char *name, dentry_t **result)
     }   
 }
 
-static bool premission(inode_t *inode, uint16 mask)
+bool permission(inode_t *inode, uint16 mask)
 {
     uint16 mode = inode->desc->mode;
     if(!inode->desc->nlinks)
@@ -189,7 +185,7 @@ inode_t *named(char *pathname, char **next)
 
         iput(inode);
         inode = iget(dev, entry->nr);
-        if(!ISDIR(inode->desc->mode) || !premission(inode, P_EXEC))
+        if(!ISDIR(inode->desc->mode) || !permission(inode, P_EXEC))
             goto failure;
         if(right == *next)
             goto success;
@@ -256,7 +252,7 @@ inode_t *inode_open(char *pathname, int flag, int mode)
     if(!(flag & O_CREAT))
         goto rollback;
 
-    if(!premission(dir, P_WRITE))
+    if(!permission(dir, P_WRITE))
         goto rollback;
 
     buf = add_entry(dir, name, &entry);
@@ -271,7 +267,7 @@ inode_t *inode_open(char *pathname, int flag, int mode)
     inode->desc->mode = mode;
 
 makeup:
-    if(!premission(inode, flag & O_ACCMODE))
+    if(!permission(inode, flag & O_ACCMODE))
         goto rollback;
     if(ISDIR(inode->desc->mode) && ((flag & O_ACCMODE) != O_RDONLY))
         goto rollback;
@@ -388,7 +384,7 @@ int sys_link(char *oldname, char *newname)
     if(dir->dev != inode->dev)
         goto rollback;
     
-    if(!premission(dir, P_WRITE))
+    if(!permission(dir, P_WRITE))
         goto rollback;
 
     char *name = next;
@@ -430,7 +426,7 @@ int sys_unlink(char *filename)
     if(!(*next))
         goto rollback;
 
-    if(!premission(dir, P_WRITE))
+    if(!permission(dir, P_WRITE))
         goto rollback;
     
     char *name = next;
@@ -503,7 +499,7 @@ int sys_mkdir(char *pathname, int mode)
     if(!*next)
         goto rollback;
 
-    if(!premission(dir, P_WRITE))
+    if(!permission(dir, P_WRITE))
         goto rollback;
 
     char *name = next;
@@ -608,7 +604,7 @@ int sys_rmdir(char *pathname)
     if(!*next)
         goto rollback;
     
-    if(!premission(dir, P_WRITE))
+    if(!permission(dir, P_WRITE))
         goto rollback;
 
     char *name = next;
@@ -698,7 +694,7 @@ int sys_mknod(char *filename, int mode, int dev)
         goto rollback;
     if(!(*next))
         goto rollback;
-    if(!premission(dir, P_WRITE))
+    if(!permission(dir, P_WRITE))
         goto rollback;
     
     char *name = next;

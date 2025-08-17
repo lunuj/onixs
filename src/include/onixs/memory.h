@@ -74,7 +74,7 @@ typedef struct page_entry_t{
     uint8 global : 1;   // 全局，所有进程都用到了，该页不刷新缓冲
     uint8 shared : 1;   // 共享内存页 CPU无关
     uint8 privat : 1;   // 私有内存页 CPU无关
-    uint8 flag : 1;     // 
+    uint8 readonly : 1; // 只读内存页，与 CPU 无关
     uint32 index : 20;  // 页索引
 }_packed page_entry_t;
 

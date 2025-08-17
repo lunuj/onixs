@@ -39,12 +39,16 @@ typedef struct task_t{
     pid_t ppid;                         // 副任务 id
     uint32 pde;                         // 页目录物理地址
     struct bitmap_t * vmap;             // 进程虚拟内存位图
+    uint32 text;                        // 代码段地址
+    uint32 data;                        // 数据段地址
+    uint32 end;                         // 程序结束地址
     uint32 brk;                         // 进程堆内存最高地址
     int status;                         // 进程特殊状态
     pid_t waitpid;                      // 进程等待的pid
     char *pwd;                          // 进程当前目录
     struct inode_t *ipwd;               // 进程当前目录 inode program work directory
     struct inode_t *iroot;              // 进程当前根目录 inode
+    struct inode_t *iexec;              // 程序文件 inode
     uint16 umask;                       // 进程用户权限
     struct file_t *files[TASK_FILE_NR]; // 进程文件表
     uint32 magic;                       // 内核魔术用于检测栈溢出
