@@ -14,12 +14,14 @@ QEMU_DISK	:= 	-boot c \
 				-drive file=$(DATA_IMG),if=ide,index=1,media=disk,format=raw
 QEMU_CDROM	:= -boot d -cdrom $(ISO)
 QEMU_CDROM_t:= file=$(ISO),media=cdrom
+QEMU_SERIAL1 := -chardev stdio,mux=on,id=com1 -serial chardev:com1
+QEMU_SERIAL2 := -chardev vc,mux=on,id=com2 -serial chardev:com2
+# QEMU_SERIAL2 := -chardev udp,mux=on,id=com2,port=7777,ipv4=on  -serial chardev:com2
 QEMU_DEBUG	:= -s -S
-
 qemu-nodebug: img
 	qemu-system-i386 $(QEMUFLAG) $(QEMU_DISK) 
 qemu-c: img
-	qemu-system-i386 $(QEMU_DEBUG) $(QEMU_DISK) $(QEMUFLAG)
+	qemu-system-i386 $(QEMU_DEBUG) $(QEMU_DISK) $(QEMUFLAG) $(QEMU_SERIAL1) $(QEMU_SERIAL2)
 qemu-d: iso
 	qemu-system-i386 $(QEMU_DEBUG) $(QEMU_CDROM) $(QEMUFLAG)
 $(VMDK): img

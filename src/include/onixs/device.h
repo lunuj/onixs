@@ -20,9 +20,10 @@ enum device_subtype_t
 {
     DEV_CONSOLE = 1,
     DEV_KEYBOARD,
+    DEV_SERIAL,         // 串口
     DEV_IDE_DISK,       // IDE 磁盘
     DEV_IDE_PART,       // IDE 磁盘分区
-    DEV_RAMDISK = 5,        // 虚拟磁盘
+    DEV_RAMDISK,        // 虚拟磁盘
 };
 
 // 设备控制命令
@@ -76,4 +77,5 @@ int device_read(dev_t dev, void *buf, size_t count ,idx_t ide, int flags);
 int device_write(dev_t dev, void *buf, size_t count ,idx_t ide, int flags);
 // 块设备请求
 void device_request(dev_t dev, void *buf, uint8 count, idx_t idx, int flags, uint32 type);
+void serial_init();
 #endif // DEVICE_H

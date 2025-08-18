@@ -23,7 +23,26 @@ static void sys_default()
 }
 
 static uint32 sys_test(){
-    SYS_LOG(LOG_INFO, "syscall test...\n");
+    char ch;
+    device_t *device;
+    device_t *serial = device_find(DEV_SERIAL, 0);
+    assert(serial);
+
+    device_t *serial1 = device_find(DEV_SERIAL, 1);
+    assert(serial1);
+
+    device_t *keyboard = device_find(DEV_KEYBOARD, 0);
+    assert(keyboard);
+
+    device_t *console = device_find(DEV_CONSOLE, 0);
+    assert(console);
+
+    // device_read(serial->dev, &ch, 1, 0, 0);
+    device_read(keyboard->dev, &ch, 1, 0, 0);
+
+    device_write(console->dev, &ch, 1, 0, 0);
+    device_write(serial->dev, &ch, 1, 0, 0);
+    device_write(serial1->dev, &ch, 1, 0, 0);
     return 255;
 }
 

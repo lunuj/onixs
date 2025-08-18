@@ -6,6 +6,7 @@
 #include <onixs/task.h>
 #include <onixs/clock.h>
 #include <onixs/gate.h>
+#include <onixs/device.h>
 #include <onixs/keyboard.h>
 #include <onixs/global.h>
 #include <onixs/arena.h>
@@ -34,6 +35,7 @@ void kernel_init(){
     time_init();
     ide_init();
     keyboard_init();
+    serial_init();
 //  文件系统
     buffer_init();
     inode_init();
