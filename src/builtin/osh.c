@@ -6,6 +6,7 @@
 #include <onixs/fs.h>
 #include <onixs/stat.h>
 #include <onixs/time.h>
+#include <onixs/debug.h>
 
 #define MAX_CMD_LEN 256
 #define MAX_ARG_NR 16
@@ -278,7 +279,6 @@ void builtin_exec(int argc, char *argvp[])
     if(pid)
     {
         pid_t child = waitpid(pid, &status);
-        printf("wait pid %d status %d %d", child, status, time());
     }
     else
     {
@@ -407,7 +407,6 @@ static int cmd_parse(char *cmd, char *argv[], char token)
 #include "hello.h"
 int osh_main()
 {
-    builtin_test(0, NULL);
     fd_t fd = open("/hello.txt", O_RDWR, 0);
     write(fd, hello, 8676);
     close(fd);

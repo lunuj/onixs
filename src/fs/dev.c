@@ -63,6 +63,17 @@ void dev_init()
     link("/dev/console", "/dev/stderr");
     link("/dev/keyboard", "/dev/stdin");
 
+    for (size_t i = 0; true; i++)
+    {
+        device = device_find(DEV_SERIAL, i);
+        if (!device)
+        {
+            break;
+        }
+        sprintf(name, "/dev/%s", device->name);
+        mknod(name, IFCHR | 0600, device->dev);
+    }
+    
     file_t *file;
     inode_t *inode;
     file = &file_table[STDIN_FILENO];
