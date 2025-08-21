@@ -1,5 +1,6 @@
-BUILD_DIR 	= ./build
 SRC_DIR		= ./src
+include $(SRC_DIR)/../config.mk  
+
 IMG			= $(BUILD_DIR)/system.image
 DATA_IMG	= $(BUILD_DIR)/data.image
 ISO			= $(BUILD_DIR)/system.iso
@@ -31,7 +32,14 @@ img:
 	make -C $(SRC_DIR) img
 iso:
 	make -C $(SRC_DIR) iso
+env:
+	make -C $(CRT_DIR) all
 
 .PHONY: clean qemu img
 clean:
-	rm -rf $(BUILD_DIR)
+	rm -rf $(BUILD_DIR)/*.bin
+	rm -rf $(BUILD_DIR)/system.image
+	rm -rf $(BUILD_DIR)/kernel
+	rm -rf $(BUILD_DIR)/fs
+	rm -rf $(BUILD_DIR)/builtin
+	rm -rf $(BUILD_DIR)/lib
