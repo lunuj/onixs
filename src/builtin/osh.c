@@ -404,13 +404,9 @@ static int cmd_parse(char *cmd, char *argv[], char token)
     argv[argc] = NULL;
     return argc;
 }
-#include "hello.h"
 int osh_main()
 {
-    fd_t fd = open("/hello.txt", O_RDWR, 0);
-    write(fd, hello, 8676);
-    close(fd);
-
+    test();
     memset(cmd, 0, sizeof(cmd));
     memset(cwd, 0, sizeof(cwd));
 

@@ -21,28 +21,24 @@ static void sys_default()
 {
     panic("[ERROR]: syscall not implemented");
 }
+extern int ide_read_exec(void * buf, uint8 count, idx_t lba);
 
 static uint32 sys_test(){
-    char ch;
-    device_t *device;
-    device_t *serial = device_find(DEV_SERIAL, 0);
-    assert(serial);
-
-    device_t *serial1 = device_find(DEV_SERIAL, 1);
-    assert(serial1);
-
-    device_t *keyboard = device_find(DEV_KEYBOARD, 0);
-    assert(keyboard);
-
-    device_t *console = device_find(DEV_CONSOLE, 0);
-    assert(console);
-
-    // device_read(serial->dev, &ch, 1, 0, 0);
-    device_read(keyboard->dev, &ch, 1, 0, 0);
-
-    device_write(console->dev, &ch, 1, 0, 0);
-    device_write(serial->dev, &ch, 1, 0, 0);
-    device_write(serial1->dev, &ch, 1, 0, 0);
+    int ret = interrupt_disable_ret();
+    fd_t fd = open("/hello.txt", 0, 0);
+    char buf[BLOCK_SIZE];
+    task_t *task = running_task();
+    file_t *file = task->files[fd];
+    file->flags = O_RDWR;
+    int i = 0;
+    while(i < 39)
+    {
+        ide_read_exec(buf, 2, (8 + i)*2);
+        write(fd, buf, BLOCK_SIZE);
+        i++;
+    }
+    close(fd);
+    interrupt_set_state(ret);
     return 255;
 }
 

@@ -241,6 +241,24 @@ rollback:
     return ret;
 }
 
+int ide_read_exec(void * buf, uint8 count, idx_t lba)
+{
+    ide_disk_t *disk = &controllers[0].disk[1];
+    ide_ctrl_t * ctrl = &controllers[0];
+    ide_select_drive(disk);
+    ide_busy_wait(ctrl, IDE_SR_DRDY);
+    ide_select_sector(disk, lba, count);
+    outb(ctrl->iobase + IDE_COMMAND, IDE_CMD_READ);
+
+    for(size_t i = 0; i < count; i++)
+    {
+        ide_busy_wait(ctrl, IDE_SR_DRQ);
+        uint32 offset = ((uint32)buf + i * SECTOR_SIZE);
+        ide_pio_read_sector(disk, (uint16 *)offset);
+    }
+    return 0;
+}
+
 /**
  * @brief  从disk中的lba块读取count个扇区到buf中
  * @param  disk 要读取的硬盘

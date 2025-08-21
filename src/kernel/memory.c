@@ -220,8 +220,8 @@ static uint32 get_page(){
     for(size_t i = start_page; i < total_pages; i++){
         if(!memory_map[i]){
             memory_map[i] = 1;
-            free_pages--;
             assert(free_pages >= 0);
+            free_pages--;
             uint32 page = ((uint32)i) << 12;
             SYS_LOG(LOG_INFO, "Get page %#p\n", page);
             return page;

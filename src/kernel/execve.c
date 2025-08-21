@@ -342,7 +342,7 @@ rollback:
     iput(inode);
     return ret;
 }
-#elif 
+#else
 int sys_execve(char *filename, char *argv[], char *envp[])
 {
     fd_t fd = open(filename, O_RDONLY, 0);
