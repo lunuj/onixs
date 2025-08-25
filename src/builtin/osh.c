@@ -18,7 +18,13 @@ static char cmd[MAX_CMD_LEN];
 static char *argv[MAX_ARG_NR];
 static char buf[BUFLEN];
 
-static char onixs_logo[][52] = {
+static char *envp[] = {
+    "HOME=/",
+    "PATH=/bin",
+    NULL,
+};
+
+static char *onixs_logo[] = {
     "                                ____        _     \n\t",
     "                               / __ \\___  (_)_ __ \n\t",
     "                              / /_/ / _ \\/ /\\ \\ / \n\t",
@@ -62,7 +68,10 @@ void print_prompt()
 void builtin_logo()
 {
     clear();
-    printf((char *)onixs_logo);
+    for (size_t i = 0; i < 4; i++)
+    {
+        printf(onixs_logo[i]);
+    }
 }
 
 void builtin_test(int argc, char *argv[])
@@ -270,10 +279,8 @@ void builtin_mkfs(int argc, char *argv[])
     mkfs(argv[1], 0);
 }
 
-void builtin_exec(int argc, char *argvp[])
+void builtin_exec(char *filename, int argc, char *argv[])
 {
-    if(argc < 2)
-        return;
     int status;
     pid_t pid = fork();
     if(pid)
@@ -282,7 +289,7 @@ void builtin_exec(int argc, char *argvp[])
     }
     else
     {
-        int i = execve(argv[1], NULL, NULL);
+        int i = execve(filename, argv, envp);
         exit(i);
     }
 }
@@ -328,8 +335,16 @@ static void execute(int argc, char *argv[])
     if(!strcmp(line, "mkfs"))
         return builtin_mkfs(argc, argv);
     if (!strcmp(line, "exec"))
-        return builtin_exec(argc, argv);
-    printf("osh: command not found: %s\n", argv[0]);
+        return builtin_exec(argv[1], argc - 2, argv+2);
+
+    stat_t statbuf;
+    sprintf(buf, "/bin/%s.out", argv[0]);
+    if (stat(buf, &statbuf) == EOF)
+    {
+        printf("osh: command not found: %s\n", argv[0]);
+        return;
+    }
+    return builtin_exec(buf, argc - 1, &argv[1]);
 }
 
 void readline(char *buf, uint32 count)

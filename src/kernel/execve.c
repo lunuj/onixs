@@ -293,6 +293,79 @@ static uint32 load_elf(inode_t *inode)
 
     return ehdr->e_entry;
 }
+
+static int count_argv(char *argv[])
+{
+    if(!argv)
+        return 0;
+    int i = 0;
+    while (argv[i])
+        i++;
+    return i;    
+}
+
+static uint32 copy_argv_envp(char *filename, char *argv[], char *envp[])
+{
+    int argc = count_argv(argv) + 1;
+    int envc = count_argv(envp);
+
+    uint32 pages = alloc_kpage(4);
+    uint32 pages_end = pages + 4 * MEMORY_PAGE_SIZE;
+
+    char *ktop = (char *)pages_end;
+    char *utop = (char *)USER_STACK_TOP;
+
+    char **argvk = (char **)alloc_kpage(1);
+    argvk[argc] = NULL;
+    
+    char **envpk = (char **) argvk + argc + 1;
+    envpk[envc] = NULL;
+
+    int len = 0;
+    for (int i = envc - 1;i >= 0; i--)
+    {
+        len = strlen(envp[i]) + 1;
+        ktop -= len;
+        utop -= len;
+        memcpy(ktop, envp[i], len);
+        envpk[i] = utop;
+    }
+
+    for (int i = argc - 1; i > 0; i--)
+    {
+        len = strlen(argv[i - 1]) + 1;
+        ktop -= len;
+        utop -= len;
+        memcpy(ktop, argv[i - 1], len);
+        argvk[i] = utop;
+    }
+
+    len = strlen(filename) + 1;
+    ktop -= len;
+    utop -= len;
+    memcpy(ktop, filename, len);
+    argvk[0] = utop;
+
+    ktop -= (envc + 1) * 4;
+    memcpy(ktop, envpk, (envc + 1)*4);
+
+    ktop -= (argc + 1) * 4;
+    memcpy(ktop, argvk, (argc + 1) * 4);
+
+    ktop -= 4;
+    *(int *)ktop = argc;
+
+    assert((uint32)ktop > pages);
+
+    len = (pages_end - (uint32)ktop);
+    utop = (char *)(USER_STACK_TOP - len);
+    memcpy(utop, ktop, len);
+
+    free_kpage((uint32)argvk, 1);
+    free_kpage(pages, 4);
+
+    return (uint32)utop;
+}
 #if 1
 int sys_execve(char *filename, char *argv[], char *envp[])
 {
@@ -310,7 +383,7 @@ int sys_execve(char *filename, char *argv[], char *envp[])
     task_t *task = running_task();
     strncpy(task->name, filename, TASK_NAME_LEN);
 
-    // TODO 处理参数和环境变量
+    uint32 top = copy_argv_envp(filename, argv, envp);
 
     // 首先释放原程序的堆内存
     task->end = USER_EXEC_ADDR;
@@ -329,8 +402,9 @@ int sys_execve(char *filename, char *argv[], char *envp[])
 
     intr_frame_t *iframe = (intr_frame_t *)((uint32)task + MEMORY_PAGE_SIZE - sizeof(intr_frame_t));
 
+    iframe->edx = 0; // 动态连接器地址
     iframe->eip = entry;
-    iframe->esp = (uint32)USER_STACK_TOP;
+    iframe->esp = top;
 
     // ROP 技术，直接从中断返回
     // 通过 eip 跳转到 entry 执行
