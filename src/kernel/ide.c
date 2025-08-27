@@ -351,7 +351,7 @@ void ide_handler(int vector)
     if(ctrl->waiter)
     {
         task_unblock(ctrl->waiter);
-        ctrl->waiter == NULL;
+        ctrl->waiter = NULL;
     }
 }
 
@@ -522,6 +522,6 @@ void ide_init()
     interrupt_register(IRQ_HARDDISK, ide_handler);
     interrupt_register(IRQ_HARDDISK2, ide_handler);
     interrupt_mask(IRQ_HARDDISK, true);
-    interrupt_mask(IRQ_HARDDISK2, true);
+    interrupt_mask(IRQ_HARDDISK2, false);
     interrupt_mask(IRQ_CASCADE, true);
 }

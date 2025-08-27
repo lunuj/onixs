@@ -284,9 +284,6 @@ static void task_build_stack(task_t *task)
     task->stack = (uint32 *)frame;
 }
 
-
-
-
 fd_t task_get_fd(task_t *task)
 {
     fd_t i;

@@ -20,7 +20,7 @@ $(ENV_OUT): $(CRT_OBJ) $(KERNEL_LIB)
 	$(LD) $(LDFLAGS) -T $(LD_SCRIPT) $^ -o $@
 	
 all: $(ENV_OUT)
-	dd if=$(ENV_OUT) of=$(DATA_IMG) bs=512 count=200 seek=16 conv=notrunc
+	dd if=$(ENV_OUT) of=$(DATA_IMG) bs=512 count=80 seek=128 conv=notrunc
 
 .PHONY: clean all
 clean:
