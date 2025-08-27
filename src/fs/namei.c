@@ -280,6 +280,9 @@ makeup:
     iput(dir);
     return inode;
 rollback:
+    brelse(buf);
+    iput(dir);
+    iput(inode);
     return NULL;
 }
 

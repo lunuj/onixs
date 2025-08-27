@@ -26,7 +26,7 @@ extern int ide_read_exec(void * buf, uint8 count, idx_t lba);
 static uint32 sys_test(){
     int i = 0;
     int ret = interrupt_disable_ret();
-    fd_t fd = open("/hello.txt", 0, 0);
+    fd_t fd = open("/bin/ls", 0, 0);
     char buf[BLOCK_SIZE];
     task_t *task = running_task();
     file_t *file = task->files[fd];

@@ -6,7 +6,8 @@ FS_DIR		= $(SRC_DIR)/fs
 LIB_DIR		= $(SRC_DIR)/lib
 UTILS_DIR 	= $(SRC_DIR)/utils
 BUILTIN_DIR = $(SRC_DIR)/builtin
-CRT_DIR	 	= $(BUILTIN_DIR)/crt
+BUILTIN_CRT_DIR	 	= $(BUILTIN_DIR)/crt
+BUILTIN_UTILS_DIR	= $(BUILTIN_DIR)/utils
 INCLUDE_DIR = $(SRC_DIR)/include
 # 输出镜像
 KERNEL		= $(BUILD_DIR)/kernel.bin

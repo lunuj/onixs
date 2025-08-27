@@ -62,7 +62,7 @@ pid_t fork();
 int read(fd_t fd, char *buf, uint32 len);
 int32 write(fd_t fd, char * buf, uint32 len);
 
-fd_t open(char *filename, int flahs, int mode);
+fd_t open(char *filename, int flags, int mode);
 void close(fd_t fd);
 
 pid_t waitpid(pid_t pid, int * status);

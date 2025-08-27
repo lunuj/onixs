@@ -279,6 +279,19 @@ void builtin_mkfs(int argc, char *argv[])
     mkfs(argv[1], 0);
 }
 
+void builtin_touch(int argc, char *argv[])
+{
+    if(argc < 2)
+        return;
+    fd_t fd = open(argv[1], O_CREAT | O_RDWR, 0777);
+    if(fd == EOF)
+    {
+        return;
+    }else{
+        close(fd);
+    }
+}
+
 void builtin_exec(char *filename, int argc, char *argv[])
 {
     int status;
@@ -334,11 +347,12 @@ static void execute(int argc, char *argv[])
         return builtin_umount(argc, argv);
     if(!strcmp(line, "mkfs"))
         return builtin_mkfs(argc, argv);
+    if(!strcmp(line, "touch"))
+        return builtin_touch(argc, argv);
     if (!strcmp(line, "exec"))
         return builtin_exec(argv[1], argc - 2, argv+2);
-
     stat_t statbuf;
-    sprintf(buf, "/bin/%s.out", argv[0]);
+    sprintf(buf, "/bin/%s", argv[0]);
     if (stat(buf, &statbuf) == EOF)
     {
         printf("osh: command not found: %s\n", argv[0]);

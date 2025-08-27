@@ -33,7 +33,7 @@ img:
 iso:
 	make -C $(SRC_DIR) iso
 env:
-	make -C $(CRT_DIR) all
+	make -C $(BUILTIN_CRT_DIR) all
 
 .PHONY: clean qemu img
 clean:
