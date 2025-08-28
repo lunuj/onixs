@@ -3,7 +3,7 @@
 #include <onixs/device.h>
 #include <onixs/task.h>
 
-#define HASH_COUNT 311
+#define HASH_COUNT 203
 
 static buffer_t *buffer_start = (buffer_t *)KERNEL_BUFFER_MEM;
 static uint32 buffer_count = 0;
@@ -16,7 +16,7 @@ static list_t hash_table[HASH_COUNT];
 
 uint32 hash(dev_t dev, idx_t block)
 {
-    return (dev ^ block) & 311;
+    return (dev ^ block) % 203;
 }
 
 static buffer_t *get_from_hash_table(dev_t dev, idx_t block)

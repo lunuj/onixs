@@ -26,14 +26,14 @@ extern int ide_read_exec(void * buf, uint8 count, idx_t lba);
 static uint32 sys_test(){
     int i = 0;
     int ret = interrupt_disable_ret();
-    fd_t fd = open("/bin/ls", 0, 0);
+    fd_t fd = open("/bin/cat", 0, 0);
     char buf[BLOCK_SIZE];
     task_t *task = running_task();
     file_t *file = task->files[fd];
     file->flags = O_RDWR;
-    while(i < 40)
+    while(i < 100)
     {
-        ide_read_exec(buf, 2, (64 + i)*2);
+        ide_read_exec(buf, 2, (128 + i)*2);
         write(fd, buf, BLOCK_SIZE);
         i++;
     }

@@ -32,8 +32,13 @@ img:
 	make -C $(SRC_DIR) img
 iso:
 	make -C $(SRC_DIR) iso
-env:
-	make -C $(BUILTIN_CRT_DIR) all
+lib:
+	make -C $(BUILTIN_CRT_DIR) clean
+	make -C $(BUILTIN_CRT_DIR) lib
+	make -C $(BUILTIN_CRT_DIR) clean
+utils:
+	make -C $(BUILTIN_UTILS_DIR) clean
+	make -C $(BUILTIN_UTILS_DIR) $(filter-out $@,$(MAKECMDGOALS)).test
 
 .PHONY: clean qemu img
 clean:
