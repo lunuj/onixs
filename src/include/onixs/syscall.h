@@ -28,9 +28,11 @@ typedef enum syscall_t{
     SYS_NR_FSTAT = 28,
     SYS_NR_MKDIR = 39,
     SYS_NR_RMDIR = 40,
+    SYS_NR_DUP = 41,
     SYS_NR_BRK = 45,
     SYS_NR_UMASK = 60,
     SYS_NR_CHROOT = 61,
+    SYS_NR_DUP2 = 63,
     SYS_NR_GETPPID = 64,
     SYS_NR_READDIR = 89,
     SYS_NR_MMAP = 90,
@@ -80,8 +82,6 @@ int mknod(char *filename, int mode, int dev);
 int stat(char *filename, stat_t *statbuf);
 int lseek(fd_t fd, off_t offset, int whence);
 
-pid_t getpid();
-pid_t getppid();
 int mount(char *devname, char *dirname, int flags);
 int umount(char *target);
 
@@ -89,11 +89,16 @@ int fstat(fd_t fd, stat_t *statbuf);
 
 int mkdir(char *pathname, int mode);
 int rmdir(char *pathname);
+fd_t dup(fd_t oldfd);
 
 int32 brk(void * addr);
 
 mode_t umask(mode_t mask);
 int chroot(char *pathname);
+
+fd_t dup2(fd_t oldfd, fd_t newfd);
+pid_t getpid();
+pid_t getppid();
 
 void yield();
 void sleep(uint32 ms);

@@ -25,8 +25,10 @@ extern int ide_read_exec(void * buf, uint8 count, idx_t lba);
 
 static uint32 sys_test(){
     int i = 0;
+    // TEST
+    return i;
     int ret = interrupt_disable_ret();
-    fd_t fd = open("/bin/cat", 0, 0);
+    fd_t fd = open("/bin/echo", 0, 0);
     char buf[BLOCK_SIZE];
     task_t *task = running_task();
     file_t *file = task->files[fd];
@@ -76,9 +78,11 @@ void syscall_init(){
     syscall_table[SYS_NR_UMOUNT] = sys_umount;
     syscall_table[SYS_NR_MKDIR] = sys_mkdir;
     syscall_table[SYS_NR_RMDIR] = sys_rmdir;
+    syscall_table[SYS_NR_DUP] = sys_dup;
     syscall_table[SYS_NR_BRK] = sys_brk;
     syscall_table[SYS_NR_UMASK] = sys_umask;
     syscall_table[SYS_NR_CHROOT] = sys_chroot;
+    syscall_table[SYS_NR_DUP2] = sys_dup2;
     syscall_table[SYS_NR_GETPPID] = sys_getppid;
     syscall_table[SYS_NR_MMAP] = sys_mmap;
     syscall_table[SYS_NR_MUNMAP] = sys_munmap;

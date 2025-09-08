@@ -98,7 +98,9 @@ void reckon_size(int *size, char *qualifer)
 
 int main(int argc, char const *argv[], char const *envp[])
 {
-    fd_t fd = open(".", O_RDONLY, 0);
+    char path[128];
+    getcwd(path, 128);
+    fd_t fd = open(path, O_RDONLY, 0);
     if (fd == EOF)
         return EOF;
 

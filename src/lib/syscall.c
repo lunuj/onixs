@@ -177,6 +177,10 @@ int rmdir(char *pathname)
 {
     return _syscall1(SYS_NR_RMDIR, (uint32)pathname);
 }
+fd_t dup(fd_t oldfd)
+{
+    return _syscall1(SYS_NR_DUP, (uint32)oldfd);
+}
 
 int32 brk(void * addr)
 {
@@ -192,6 +196,10 @@ int chroot(char *pathname)
     return _syscall1(SYS_NR_CHROOT, (uint32)pathname);
 }
 
+fd_t dup2(fd_t oldfd, fd_t newfd)
+{
+    return _syscall2(SYS_NR_DUP2, (uint32)oldfd, (uint32)newfd);
+}
 pid_t getppid(){
     return _syscall0(SYS_NR_GETPPID);
 }

@@ -32,6 +32,7 @@
 #define P_READ IROTH
 #define P_WRITE IWOTH
 
+#define ACC_MODE(x) ("\004\002\006\007"[(x)&O_ACCMODE])
 enum file_flag
 {
     O_RDONLY = 00,      // 只读方式
@@ -167,6 +168,8 @@ fd_t sys_creat(char *filename, int mode);
 int sys_lseek(fd_t fd, off_t offset, int whence);
 
 int sys_readdir(fd_t fd, dirent_t *dir, uint32 count);
+fd_t sys_dup(fd_t oldfd);
+fd_t sys_dup2(fd_t oldfd, fd_t newfd);
 
 // namei.c
 int sys_mknod(char *filename, int mode, int dev);

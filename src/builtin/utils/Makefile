@@ -26,7 +26,7 @@ $(OUTPUT_DIR)/%.out : $(OUTPUT_DIR)/%.o
 
 all: $(UTILS_OUT)
 
-%.test: $(OUTPUT_DIR)/%.out
+%.utils: $(OUTPUT_DIR)/%.out
 	test -n "$$(find $< -size -100k)"
 	dd if=$< of=$(DATA_IMG) bs=512 count=200 seek=256 conv=notrunc
 

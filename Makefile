@@ -36,9 +36,9 @@ lib:
 	make -C $(BUILTIN_CRT_DIR) clean
 	make -C $(BUILTIN_CRT_DIR) lib
 	make -C $(BUILTIN_CRT_DIR) clean
-utils:
+%.utils:
 	make -C $(BUILTIN_UTILS_DIR) clean
-	make -C $(BUILTIN_UTILS_DIR) $(filter-out $@,$(MAKECMDGOALS)).test
+	make -C $(BUILTIN_UTILS_DIR) $@
 
 .PHONY: clean qemu img
 clean:
