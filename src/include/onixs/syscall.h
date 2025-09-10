@@ -29,6 +29,7 @@ typedef enum syscall_t{
     SYS_NR_MKDIR = 39,
     SYS_NR_RMDIR = 40,
     SYS_NR_DUP = 41,
+    SYS_NR_PIPE = 42,
     SYS_NR_BRK = 45,
     SYS_NR_UMASK = 60,
     SYS_NR_CHROOT = 61,
@@ -90,6 +91,7 @@ int fstat(fd_t fd, stat_t *statbuf);
 int mkdir(char *pathname, int mode);
 int rmdir(char *pathname);
 fd_t dup(fd_t oldfd);
+int pipe(fd_t pipefd[2]);
 
 int32 brk(void * addr);
 

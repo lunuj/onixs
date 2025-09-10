@@ -7,7 +7,9 @@
 #include <onixs/string.h>
 #include <onixs/stdlib.h>
 #include <onixs/stat.h>
+#include <onixs/fifo.h>
 #include <onixs/task.h>
+#include <onixs/memory.h>
 
 #define INODE_NR 64
 
@@ -136,6 +138,32 @@ inode_t *iget(dev_t dev, idx_t nr)
     return inode;
 }
 
+inode_t *get_pipe_inode()
+{
+    inode_t *inode = get_free_inode();
+    inode->dev = -2;
+    inode->desc = (inode_desc_t *)kmalloc(sizeof(fifo_t));
+    inode->buf = (void *)alloc_kpage(1);
+    inode->count = 2;
+    inode->pipi = true;
+    fifo_init((fifo_t *)inode->desc, (char *)inode->buf, MEMORY_PAGE_SIZE);
+    return inode;
+}
+
+void put_pipe_inode(inode_t *inode)
+{
+    if(!inode)
+        return;
+    inode->count--;
+    if(inode->count)
+        return;
+    inode->pipi = false;
+    assert(!inode->rxwaiter);
+    assert(!inode->txwaiter);
+    free_kpage((uint32)inode->buf, 1);
+    put_free_inode(inode);
+}
+
 /**
  * @brief  释放对应inode
  * @param  *inode 指向inode指针
@@ -146,7 +174,8 @@ void iput(inode_t *inode)
 {
     if(!inode)
         return;
-
+    if(inode->pipi)
+        return put_pipe_inode(inode);
     if(inode->buf->dirty)
     {
         bwrite(inode->buf);

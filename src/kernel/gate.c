@@ -79,6 +79,7 @@ void syscall_init(){
     syscall_table[SYS_NR_MKDIR] = sys_mkdir;
     syscall_table[SYS_NR_RMDIR] = sys_rmdir;
     syscall_table[SYS_NR_DUP] = sys_dup;
+    syscall_table[SYS_NR_PIPE] = sys_pipe;
     syscall_table[SYS_NR_BRK] = sys_brk;
     syscall_table[SYS_NR_UMASK] = sys_umask;
     syscall_table[SYS_NR_CHROOT] = sys_chroot;

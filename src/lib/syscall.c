@@ -181,6 +181,10 @@ fd_t dup(fd_t oldfd)
 {
     return _syscall1(SYS_NR_DUP, (uint32)oldfd);
 }
+int pipe(fd_t pipefd[2])
+{
+    return _syscall1(SYS_NR_PIPE, (uint32)pipefd);
+}
 
 int32 brk(void * addr)
 {

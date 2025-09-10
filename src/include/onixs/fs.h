@@ -69,6 +69,9 @@ typedef struct inode_t
     time_t ctime;         // 修改时间
     list_node_t node;     // 链表结点
     dev_t mount;          // 安装设备
+    struct task_t *rxwaiter;    // 读等待进程
+    struct task_t *txwaiter;    // 写等待进程
+    bool pipi;            // 管道标识
 } inode_t;
 
 typedef struct super_desc_t
@@ -131,8 +134,9 @@ void ifree(dev_t dev, idx_t idx); // 释放一个文件系统 inode
 
 
 idx_t bmap(inode_t *inode, idx_t block, bool create);
-
+file_t *get_file();
 inode_t *get_root_inode();
+inode_t *get_pipe_inode();
 inode_t *iget(dev_t dev, idx_t nr);
 void iput(inode_t *inode);
 inode_t *new_inode(dev_t dev, idx_t nr);
@@ -155,6 +159,9 @@ inode_t *inode_open(char *pathname, int flag, int mode);
 
 void dev_init();
 int devmkfs(dev_t dev, uint32 icount);
+
+int pipe_read(inode_t *inode, char *buf, int count);
+int pipe_write(inode_t *inode, char *buf, int count);
 // 系统调用相关
 // file.c
 int sys_read(fd_t fd, char *buf, uint32 len);
@@ -187,4 +194,7 @@ char *sys_getcwd(char *buf, size_t size);
 int sys_mount(char *devname, char *dirname, int flags);
 int sys_umount(char *target);
 int sys_mkfs(char *devname, int icount);
+
+// pipe.c
+int sys_pipe(fd_t pipefd[2]);
 #endif // FS_H
