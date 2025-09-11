@@ -179,7 +179,7 @@ void builtin_touch(int argc, char *argv[])
     }
 }
 
-static void dupfile(int argc, char **argv, fd_t dupfd[3])
+static int dupfile(int argc, char **argv, fd_t dupfd[3])
 {
     for (size_t i = 0; i < 3; i++)
     {
@@ -265,7 +265,7 @@ static void dupfile(int argc, char **argv, fd_t dupfd[3])
         }
         dupfd[2] = fd;
     }
-    return;
+    return 0;
 
 rollback:
     for (size_t i = 0; i < 3; i++)
@@ -273,6 +273,7 @@ rollback:
         if(dupfd[i] != EOF)
             close(dupfd[i]);
     }
+    return EOF;
 }
 
 static pid_t builtin_command(char *filename, char *argv[], fd_t infd, fd_t outfd, fd_t errfd)
@@ -311,20 +312,55 @@ static pid_t builtin_command(char *filename, char *argv[], fd_t infd, fd_t outfd
 
 void builtin_exec(int argc, char *argv[])
 {
+    bool p = true;
     int status;
-    stat_t statbuf;
-    sprintf(buf, "/bin/%s", argv[0]);
-    if (stat(buf, &statbuf) == EOF)
-    {
-        printf("osh: command not found: %s\n");
-        return;
-    }
 
+    char **bargv = NULL;
+    char *name = buf;
+    
     fd_t dupfd[3];
-    dupfile(argc, argv, dupfd);
+    if(dupfile(argc, argv, dupfd) == EOF)
+        return;
 
-    pid_t pid = builtin_command(buf, &argv[1], dupfd[0], dupfd[1], dupfd[2]);
-    waitpid(pid, &status);
+    fd_t infd = dupfd[0];
+    fd_t pipefd[2];
+    int count = 0;
+
+    for (int i = 0; i < argc; i++)
+    {
+        if(!argv[i])
+            continue;
+        if(!p && !strcmp(argv[i], "|"))
+        {
+            argv[i] = NULL;
+            int ret = pipe(pipefd);
+            builtin_command(name, bargv, infd, pipefd[1], EOF);
+            count++;
+            infd = pipefd[0];
+            int len = strlen(name) + 1;
+            name += len;
+            p = true;
+            continue;
+        }
+        if(!p)
+            continue;
+        
+        stat_t statbuf;
+        sprintf(name, "/bin/%s", argv[i]);
+        if(stat(name, &statbuf) == EOF)
+        {
+            printf("osh: command not found: %s\n", argv[i]);
+            return;
+        }
+        bargv = &argv[i + 1];
+        p = false;
+    }
+    
+    pid_t pid = builtin_command(name, bargv, infd, dupfd[1], dupfd[2]);
+    for (size_t i = 0; i <= count; i++)
+    {
+        pid_t child = waitpid(-1, &status);
+    }
 }
 
 static void execute(int argc, char *argv[])

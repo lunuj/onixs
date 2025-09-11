@@ -6,6 +6,11 @@
 - log: 修改日志
 - note: 注意事项
 
+## system_1.2.image
+- data: Wed Sep 10 2025 20:33:13
+- log: 支持echo命令，修复ls在bin目录下的显示bug
+- note: 注意事项
+
 ## system_1.1.image
 - data: Thu Aug 28 2025 01:36:30
 - log: 支持env、ls命令
