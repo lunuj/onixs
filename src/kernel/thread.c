@@ -24,32 +24,12 @@ void idle_thread()
     }
 }
 
-static void user_init_thread()
-{
-    while(true)
-    {
-        uint32 status;
-        pid_t pid = fork();
-        if(pid)
-        {
-            pid_t child = waitpid(pid, &status);
-            printf("wait pid %d status %d %d\n", child, status, time());
-        }
-        else
-        {
-            int err = execve("/bin/osh", NULL, NULL);
-            printf("execve /bin/osh error %d\n", err);
-            exit(err);
-        }
-    }
-}
-
 void init_thread()
 {
     char temp[100];
     dev_init();
     test();
-    task_to_user_mode(user_init_thread);
+    task_to_user_mode();
 }
 
 void test_thread()

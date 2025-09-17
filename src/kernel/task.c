@@ -158,7 +158,8 @@ static void task_setup(){
     memset(task_table, 0, sizeof(task_table));
 }
 
-void task_to_user_mode(target_t target)
+extern int sys_execve(char *filename, char *argv[], char *envp[]);
+void task_to_user_mode()
 {
     task_t * task = running_task();
 
@@ -193,13 +194,12 @@ void task_to_user_mode(target_t target)
 
     iframe->error = ONIXS_MAGIC;
 
-    iframe->eip = (uint32)target;
+    iframe->eip = (uint32)0;
     iframe->eflags = (0 << 12 | 0b10 | 1 << 9);
     iframe->esp = USER_STACK_TOP;
 
-    asm volatile(
-        "movl %0, %%esp\n"
-        "jmp interrupt_exit\n" ::"m"(iframe));
+    int err = sys_execve("/bin/init", NULL, NULL);
+    panic("exec /bin/init failure\n");
 
 }
 

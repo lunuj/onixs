@@ -116,7 +116,7 @@ void task_unblock(task_t * task);
 
 void task_wakeup();
 
-void task_to_user_mode(target_t target);
+void task_to_user_mode();
 
 fd_t task_get_fd(task_t *task);
 void task_put_fd(task_t *task, fd_t fd);
