@@ -23,7 +23,7 @@ void idle_thread()
         yield();
     }
 }
-extern int osh_main();
+
 static void user_init_thread()
 {
     while(true)
@@ -37,7 +37,9 @@ static void user_init_thread()
         }
         else
         {
-            osh_main();
+            int err = execve("/bin/osh", NULL, NULL);
+            printf("execve /bin/osh error %d\n", err);
+            exit(err);
         }
     }
 }
@@ -46,6 +48,7 @@ void init_thread()
 {
     char temp[100];
     dev_init();
+    test();
     task_to_user_mode(user_init_thread);
 }
 

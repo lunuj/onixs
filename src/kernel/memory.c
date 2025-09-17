@@ -369,7 +369,7 @@ void unlink_page(uint32 vaddr)
 
     uint32 paddr = PAGE(entry->index);
 
-    DEBUGK("[INFO]: unlink from %#p to %#p\n");
+    DEBUGK("[INFO]: unlink from %#p to %#p\n", vaddr, paddr);
     put_page(paddr);
     flush_tlb(vaddr);
 }
@@ -547,7 +547,7 @@ int32 sys_brk(void * addr)
     uint32 old_brk = task->brk;
     if(old_brk > brk)
     {
-        for(uint32 page = brk; brk < old_brk; page += MEMORY_PAGE_SIZE)
+        for(uint32 page = brk; page < old_brk; page += MEMORY_PAGE_SIZE)
         {
             unlink_page(page);
         }

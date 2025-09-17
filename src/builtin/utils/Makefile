@@ -27,8 +27,8 @@ $(OUTPUT_DIR)/%.out : $(OUTPUT_DIR)/%.o
 all: $(UTILS_OUT)
 
 %.utils: $(OUTPUT_DIR)/%.out
-	test -n "$$(find $< -size -100k)"
 	dd if=$< of=$(DATA_IMG) bs=512 count=200 seek=256 conv=notrunc
+	test -n "$$(find $< -size -100k)"
 
 .PHONY: clean all
 clean:

@@ -6,7 +6,6 @@
 #include <onixs/fs.h>
 #include <onixs/stat.h>
 #include <onixs/time.h>
-#include <onixs/debug.h>
 
 #define MAX_CMD_LEN 256
 #define MAX_ARG_NR 16
@@ -28,7 +27,7 @@ static char *onixs_logo[] = {
     "                                ____        _     \n\t",
     "                               / __ \\___  (_)_ __ \n\t",
     "                              / /_/ / _ \\/ /\\ \\ / \n\t",
-    "                              \\____/_//_/_//_\\_\\  \n\0",
+    "                              \\____/_//_/_//_\\_\\ @ user  \n\0",
 };
 
 /**
@@ -71,38 +70,6 @@ void builtin_logo()
     for (size_t i = 0; i < 4; i++)
     {
         printf(onixs_logo[i]);
-    }
-}
-
-void builtin_test(int argc, char *argv[])
-{
-    printf("osh test starting...\n");
-    int status = 0;
-    fd_t pipefd[2];
-
-    int result = pipe(pipefd);
-
-    pid_t pid = fork();
-    if(pid)
-    {
-        char buf[128];
-        printf("--%d-- getting message\n", getpid());
-        int len = read(pipefd[0], buf, 24);
-        printf("--%d-- get message: %s count %d\n", getpid(), buf, len);
-    
-        pid_t child = waitpid(pid, &status);
-        close(pipefd[1]);
-        close(pipefd[0]);
-    }
-    else
-    {
-        char *message = "pipe written message!!!";
-        printf("--%d-- put message: %s\n", getpid(), message);
-        write(pipefd[1], message, 24);
-
-        close(pipefd[1]);
-        close(pipefd[0]);
-        exit(0);
     }
 }
 
@@ -179,7 +146,7 @@ void builtin_touch(int argc, char *argv[])
     }
 }
 
-static void dupfile(int argc, char **argv, fd_t dupfd[3])
+static int dupfile(int argc, char **argv, fd_t dupfd[3])
 {
     for (size_t i = 0; i < 3; i++)
     {
@@ -265,7 +232,7 @@ static void dupfile(int argc, char **argv, fd_t dupfd[3])
         }
         dupfd[2] = fd;
     }
-    return;
+    return 0;
 
 rollback:
     for (size_t i = 0; i < 3; i++)
@@ -273,6 +240,7 @@ rollback:
         if(dupfd[i] != EOF)
             close(dupfd[i]);
     }
+    return EOF;
 }
 
 static pid_t builtin_command(char *filename, char *argv[], fd_t infd, fd_t outfd, fd_t errfd)
@@ -311,20 +279,55 @@ static pid_t builtin_command(char *filename, char *argv[], fd_t infd, fd_t outfd
 
 void builtin_exec(int argc, char *argv[])
 {
+    bool p = true;
     int status;
-    stat_t statbuf;
-    sprintf(buf, "/bin/%s", argv[0]);
-    if (stat(buf, &statbuf) == EOF)
-    {
-        printf("osh: command not found: %s\n");
+
+    char **bargv = NULL;
+    char *name = buf;
+    
+    fd_t dupfd[3];
+    if(dupfile(argc, argv, dupfd) == EOF)
         return;
+
+    fd_t infd = dupfd[0];
+    fd_t pipefd[2];
+    int count = 0;
+
+    for (int i = 0; i < argc; i++)
+    {
+        if(!argv[i])
+            continue;
+        if(!p && !strcmp(argv[i], "|"))
+        {
+            argv[i] = NULL;
+            int ret = pipe(pipefd);
+            builtin_command(name, bargv, infd, pipefd[1], EOF);
+            count++;
+            infd = pipefd[0];
+            int len = strlen(name) + 1;
+            name += len;
+            p = true;
+            continue;
+        }
+        if(!p)
+            continue;
+        
+        stat_t statbuf;
+        sprintf(name, "/bin/%s", argv[i]);
+        if(stat(name, &statbuf) == EOF)
+        {
+            printf("osh: command not found: %s\n", argv[i]);
+            return;
+        }
+        bargv = &argv[i + 1];
+        p = false;
     }
 
-    fd_t dupfd[3];
-    dupfile(argc, argv, dupfd);
-
-    pid_t pid = builtin_command(buf, &argv[1], dupfd[0], dupfd[1], dupfd[2]);
-    waitpid(pid, &status);
+    pid_t pid = builtin_command(name, bargv, infd, dupfd[1], dupfd[2]);
+    for (size_t i = 0; i <= count; i++)
+    {
+        pid_t child = waitpid(-1, &status);
+    }
 }
 
 static void execute(int argc, char *argv[])
@@ -332,8 +335,6 @@ static void execute(int argc, char *argv[])
     char *line = argv[0];
     if(argc == 0)
         return;
-    if(!strcmp(line, "test"))
-        return builtin_test(argc, argv);
     if(!strcmp(line, "logo"))
         return builtin_logo();
     if(!strcmp(line, "pwd"))
@@ -442,9 +443,8 @@ static int cmd_parse(char *cmd, char *argv[], char token)
     argv[argc] = NULL;
     return argc;
 }
-int osh_main()
+int main()
 {
-    test();
     memset(cmd, 0, sizeof(cmd));
     memset(cwd, 0, sizeof(cwd));
 
@@ -461,5 +461,6 @@ int osh_main()
             continue;
         execute(argc, argv);
     }
+
     return 0;
 }
